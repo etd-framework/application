@@ -23,6 +23,7 @@ use Joomla\Language\Language;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
 use Joomla\Router\Router;
+use Joomla\Session\Session;
 use Joomla\String\String;
 use Joomla\Uri\Uri;
 use Monolog\Handler\NullHandler;
