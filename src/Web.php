@@ -1,32 +1,30 @@
 <?php
 /**
- * @package     etd-framework
+ * Part of the ETD Framework Application Package
  *
- * @version     0.0.1
- * @copyright   Copyright (C) 2014 ETD Solutions, SARL Etudoo. Tous droits réservés.
- * @license     http://etd-solutions.com/LICENSE
+ * @copyright   Copyright (C) 2015 ETD Solutions, SARL Etudoo. Tous droits réservés.
+ * @license     Apache License 2.0; see LICENSE
  * @author      ETD Solutions http://etd-solutions.com
  */
 
 namespace EtdSolutions\Framework\Application;
 
-use EtdSolutions\Framework\Controller\ErrorController;
-use EtdSolutions\Framework\Document\Document;
-use EtdSolutions\Framework\User\User;
+use EtdSolutions\Controller\ErrorController;
+use EtdSolutions\Document\Document;
+use EtdSolutions\User\User;
 use Joomla\Application\AbstractWebApplication;
+use Joomla\Application\Web\WebClient;
 use Joomla\Crypt\Password\Simple;
 use Joomla\Database\DatabaseFactory;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Filter\InputFilter;
+use Joomla\Input\Input;
 use Joomla\Language\Language;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
-use Joomla\Input\Input;
-use Joomla\Application\Web\WebClient;
-use EtdSolutions\Framework\Session\Session;
 use Joomla\Router\Router;
-use Joomla\Uri\Uri;
 use Joomla\String\String;
+use Joomla\Uri\Uri;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
