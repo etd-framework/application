@@ -7,7 +7,7 @@
  * @author      ETD Solutions http://etd-solutions.com
  */
 
-namespace EtdSolutions\Framework\Application;
+namespace EtdSolutions\Application;
 
 use EtdSolutions\Controller\ErrorController;
 use EtdSolutions\Document\Document;
