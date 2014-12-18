@@ -92,25 +92,8 @@ abstract class Daemon extends AbstractDaemonApplication {
 
             $conf = new \JConfig;
 
-            // On définit la liste des espaces de noms dans laquelle le modèle peut se trouver.
-            $namespaces = array(
-                $conf->application_namespace,
-                '\\EtdSolutions\\Framework'
-            );
+            $className = $conf->application_namespace . '\\Application\\' . $name . 'Application';
 
-            $className = "";
-
-            // On cherche l'application dans ces espaces de nom.
-            foreach ($namespaces as $namespace) {
-
-                $className = $namespace . '\\Application\\' . $name . 'Application';
-
-                // Si on a trouvé la classe, on arrête.
-                if (class_exists($className)) {
-                    break;
-                }
-
-            }
             // On vérifie que l'on a bien une classe valide.
             if (!class_exists($className)) {
                 throw new \RuntimeException("Unable find application " . $name, 500);
