@@ -20,9 +20,9 @@
     "joomla/filter": "~1.0",
     "joomla/language": "~1.0",
     "joomla/router": "~1.0",
-    "etdsolutions/controller": "~1.0",
-    "etdsolutions/document": "~1.0",
-    "etdsolutions/user": "~1.0",
+    "etdsolutions/controller": "dev-master",
+    "etdsolutions/document": "dev-master",
+    "etdsolutions/user": "dev-master",
     "monolog/monolog": "1.11.*"
   },
   "autoload": {
