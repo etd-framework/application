@@ -4,6 +4,7 @@
   "description": "Package Application du Framework ETD",
   "homepage": "https://github.com/etd-framework/application",
   "license": "Apache-2.0",
+  "minimum-stability": "dev",
   "authors": [
     {
       "name": "Jean-Baptiste Alleaume",
