@@ -494,8 +494,8 @@ final class Web extends AbstractWebApplication {
     /**
      * Méthode d'authentification lors de la connexion.
      *
-     * @param   array  $credentials  Array('username' => string, 'password' => string)
-     * @param   array  $options      Array('remember' => boolean)
+     * @param   array $credentials Array('username' => string, 'password' => string)
+     * @param   array $options     Array('remember' => boolean)
      *
      * @return  boolean  True en cas de succès.
      */
@@ -533,23 +533,30 @@ final class Web extends AbstractWebApplication {
             }
 
             // On filtre les entrées car on va les utiliser dans la requête.
-            $filter	= new InputFilter;
-            $series	= $filter->clean($cookieArray[1], 'ALNUM');
+            $filter = new InputFilter;
+            $series = $filter->clean($cookieArray[1], 'ALNUM');
 
             // On retire les jetons expirés.
             $query = $this->db->getQuery(true)
-                ->delete('#__user_keys')
-                ->where($this->db->quoteName('time') . ' < ' . $this->db->quote(time()));
-            $this->db->setQuery($query)->execute();
+                              ->delete('#__user_keys')
+                              ->where($this->db->quoteName('time') . ' < ' . $this->db->quote(time()));
+            $this->db->setQuery($query)
+                     ->execute();
 
             // On trouve un enregistrement correspondant s'il existe.
-            $query = $this->db->getQuery(true)
-                ->select($this->db->quoteName(array('user_id', 'token', 'series', 'time')))
-                ->from($this->db->quoteName('#__user_keys'))
-                ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
-                ->order($this->db->quoteName('time') . ' DESC');
-            $results = $this->db->setQuery($query)->loadObjectList();
+            $query   = $this->db->getQuery(true)
+                                ->select($this->db->quoteName(array(
+                                    'user_id',
+                                    'token',
+                                    'series',
+                                    'time'
+                                )))
+                                ->from($this->db->quoteName('#__user_keys'))
+                                ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
+                                ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
+                                ->order($this->db->quoteName('time') . ' DESC');
+            $results = $this->db->setQuery($query)
+                                ->loadObjectList();
 
             if (count($results) !== 1) {
 
@@ -573,9 +580,10 @@ final class Web extends AbstractWebApplication {
                     // C'est une attaque réelle ! Soit on a réussi à créer un cookie valide ou alors on a volé le cookie et utilisé deux fois (une fois par le pirate et une fois par la victime).
                     // On supprime tous les jetons pour cet utilisateur !
                     $query = $this->db->getQuery(true)
-                        ->delete('#__user_keys')
-                        ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($results[0]->user_id));
-                    $this->db->setQuery($query)->execute();
+                                      ->delete('#__user_keys')
+                                      ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($results[0]->user_id));
+                    $this->db->setQuery($query)
+                             ->execute();
 
                     // On détruit le cookie dans le navigateur.
                     $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie_path', '/'), $this->get('cookie_domain'));
@@ -591,12 +599,17 @@ final class Web extends AbstractWebApplication {
             }
 
             // On s'assure qu'il y a bien un utilisateur avec cet identifiant et on récupère les données dans la session.
-            $query = $this->db->getQuery(true)
-                ->select($this->db->quoteName(array('id', 'username', 'password')))
-                ->from($this->db->quoteName('#__users'))
-                ->where($this->db->quoteName('username') . ' = ' . $this->db->quote($results[0]->user_id))
-                ->where($this->db->quoteName('requireReset') . ' = 0');
-            $result = $this->db->setQuery($query)->loadObject();
+            $query  = $this->db->getQuery(true)
+                               ->select($this->db->quoteName(array(
+                                   'id',
+                                   'username',
+                                   'password'
+                               )))
+                               ->from($this->db->quoteName('#__users'))
+                               ->where($this->db->quoteName('username') . ' = ' . $this->db->quote($results[0]->user_id))
+                               ->where($this->db->quoteName('requireReset') . ' = 0');
+            $result = $this->db->setQuery($query)
+                               ->loadObject();
 
             if ($result) {
 
@@ -608,14 +621,12 @@ final class Web extends AbstractWebApplication {
                 $session->set('user', $user);
 
                 // On met à jour les champs dans la table de session.
-                $this->db->setQuery(
-                    $this->db->getQuery(true)
-                        ->update($this->db->quoteName('#__session'))
-                        ->set($this->db->quoteName('guest') . ' = 0')
-                        ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
-                        ->set($this->db->quoteName('userid') . ' = ' . (int) $user->id)
-                        ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId()))
-                );
+                $this->db->setQuery($this->db->getQuery(true)
+                                             ->update($this->db->quoteName('#__session'))
+                                             ->set($this->db->quoteName('guest') . ' = 0')
+                                             ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
+                                             ->set($this->db->quoteName('userid') . ' = ' . (int)$user->id)
+                                             ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId())));
 
                 $this->db->execute();
 
@@ -635,13 +646,10 @@ final class Web extends AbstractWebApplication {
         } else { // Sinon on procède à l'authentification classique.
 
             // On vérifie les données.
-            $this->db->setQuery(
-                $this->db->getQuery(true)
-                    ->select('id, password, username, block')
-                    ->from('#__users')
-                    ->where('username = ' . $this->db->quote($credentials['username'])
-                    )
-            );
+            $this->db->setQuery($this->db->getQuery(true)
+                                         ->select('id, password, username, block')
+                                         ->from('#__users')
+                                         ->where('username = ' . $this->db->quote($credentials['username'])));
 
             $res = $this->db->loadObject();
 
@@ -675,14 +683,12 @@ final class Web extends AbstractWebApplication {
                     $session->set('user', $user);
 
                     // On met à jour les champs dans la table de session.
-                    $this->db->setQuery(
-                        $this->db->getQuery(true)
-                            ->update($this->db->quoteName('#__session'))
-                            ->set($this->db->quoteName('guest') . ' = 0')
-                            ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
-                            ->set($this->db->quoteName('userid') . ' = ' . (int) $user->id)
-                            ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId()))
-                    );
+                    $this->db->setQuery($this->db->getQuery(true)
+                                                 ->update($this->db->quoteName('#__session'))
+                                                 ->set($this->db->quoteName('guest') . ' = 0')
+                                                 ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
+                                                 ->set($this->db->quoteName('userid') . ' = ' . (int)$user->id)
+                                                 ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId())));
 
                     $this->db->execute();
 
@@ -732,30 +738,31 @@ final class Web extends AbstractWebApplication {
         // L'utilisateur a utilisé un cookie pour se connecter.
         if (isset($options['useCookie']) && $options['useCookie']) {
 
-            $cookieName	= $this->getShortHashedUserAgent();
+            $cookieName = $this->getShortHashedUserAgent();
 
             // On a besoin des anciennes données pour récupérer la série existante.
             $cookieValue = $this->input->cookie->get($cookieName);
             $cookieArray = explode('.', $cookieValue);
 
             // On filtre la série car on va les utiliser dans la requête.
-            $filter	= new InputFilter;
-            $series	= $filter->clean($cookieArray[1], 'ALNUM');
+            $filter = new InputFilter;
+            $series = $filter->clean($cookieArray[1], 'ALNUM');
 
         } elseif (isset($options['remember']) && $options['remember']) { // Ou il a demandé à être reconnu lors sa prochaine connexion.
 
-            $cookieName	= $this->getShortHashedUserAgent();
+            $cookieName = $this->getShortHashedUserAgent();
 
             // On crée une série unique qui sera utilisée pendant la durée de vie du cookie.
             $unique = false;
 
             do {
-                $series = User::genRandomPassword(20);
-                $query = $this->db->getQuery(true)
-                    ->select($this->db->quoteName('series'))
-                    ->from($this->db->quoteName('#__user_keys'))
-                    ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series));
-                $results = $this->db->setQuery($query)->loadResult();
+                $series  = User::genRandomPassword(20);
+                $query   = $this->db->getQuery(true)
+                                    ->select($this->db->quoteName('series'))
+                                    ->from($this->db->quoteName('#__user_keys'))
+                                    ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series));
+                $results = $this->db->setQuery($query)
+                                    ->loadResult();
 
                 if (is_null($results)) {
                     $unique = true;
@@ -770,40 +777,37 @@ final class Web extends AbstractWebApplication {
 
         // On récupère les valeurs de la configuration.
         $lifetime = $this->get('cookie_lifetime', '60') * 24 * 60 * 60;
-        $length	  = $this->get('key_length', '16');
+        $length   = $this->get('key_length', '16');
 
         // On génère un nouveau cookie.
         $token       = User::genRandomPassword($length);
         $cookieValue = $token . '.' . $series;
 
         // On écrase le cookie existant avec la nouvelle valeur.
-        $this->input->cookie->set(
-            $cookieName, $cookieValue, time() + $lifetime, $this->get('cookie_path', '/'), $this->get('cookie_domain'), $this->isSSLConnection()
-        );
+        $this->input->cookie->set($cookieName, $cookieValue, time() + $lifetime, $this->get('cookie_path', '/'), $this->get('cookie_domain'), $this->isSSLConnection());
         $query = $this->db->getQuery(true);
 
         if (isset($options['remember']) && $options['remember']) {
 
             // On crée un nouvel enregistrement.
-            $query
-                ->insert($this->db->quoteName('#__user_keys'))
-                ->set($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
-                ->set($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                ->set($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
-                ->set($this->db->quoteName('time') . ' = ' . (time() + $lifetime));
+            $query->insert($this->db->quoteName('#__user_keys'))
+                  ->set($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
+                  ->set($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
+                  ->set($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
+                  ->set($this->db->quoteName('time') . ' = ' . (time() + $lifetime));
         } else {
             // On met à jour l'enregistrement existant avec le nouveau jeton.
-            $query
-                ->update($this->db->quoteName('#__user_keys'))
-                ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
-                ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName));
+            $query->update($this->db->quoteName('#__user_keys'))
+                  ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
+                  ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
+                  ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName));
         }
 
         $simpleAuth   = new Simple();
         $hashed_token = $simpleAuth->create($token);
         $query->set($this->db->quoteName('token') . ' = ' . $this->db->quote($hashed_token));
-        $this->db->setQuery($query)->execute();
+        $this->db->setQuery($query)
+                 ->execute();
 
         return true;
     }
@@ -821,7 +825,7 @@ final class Web extends AbstractWebApplication {
             $logger = new Logger($this->get('sitename'));
 
             if (is_dir(JPATH_LOGS)) {
-                $logger->pushHandler(new StreamHandler(JPATH_LOGS."/". $this->get('log_file'), (JDEBUG ? Logger::DEBUG : Logger::WARNING)));
+                $logger->pushHandler(new StreamHandler(JPATH_LOGS . "/" . $this->get('log_file'), (JDEBUG ? Logger::DEBUG : Logger::WARNING)));
             } else { // If the log path is not set, just use a null logger.
                 $logger->pushHandler(new NullHandler, (JDEBUG ? Logger::DEBUG : Logger::WARNING));
             }
@@ -830,10 +834,18 @@ final class Web extends AbstractWebApplication {
 
         }
 
+        // Options pour la session.
+        $options = array(
+            'name'          => $this->get('sitename'),
+            'expire'        => $this->get('session_expire'),
+            'force_ssl'     => $this->get('force_ssl'),
+            'cookie_domain' => $this->get('cookie_domain'),
+            'cookie_path'   => $this->get('cookie_path'),
+            'db'            => $this->getDb()
+        );
+
         // On instancie la session.
-        $this->setSession(Session::getInstance('Database', array(
-            'db' => $this->getDb()
-        )));
+        $this->setSession(Session::getInstance('Database', $options));
 
         // On initialise la session.
         $session = $this->getSession();
@@ -1021,6 +1033,7 @@ final class Web extends AbstractWebApplication {
      * @return  void
      */
     protected function respond() {
+
         parent::respond();
 
         // On oublie pas de fermer la porte en partant !
@@ -1082,7 +1095,8 @@ final class Web extends AbstractWebApplication {
     protected function loginWithCookie() {
 
         // On procède à l'authentification de l'utilisateur par cookie s'il n'est pas déjà connecté.
-        $user = $this->getSession()->get('user');
+        $user = $this->getSession()
+                     ->get('user');
         if (!$user || ($user && $user->isGuest())) {
 
             $cookieName = $this->getShortHashedUserAgent();
