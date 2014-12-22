@@ -899,18 +899,18 @@ final class Web extends AbstractWebApplication {
      */
     protected function doExecute() {
 
-        // On redirige en HTTPS si besoin.
-        if ($this->get('force_ssl') && !$this->isSSLConnection()) {
-            $uri = new Uri($this->get('uri.request'));
-            $uri->setScheme('https');
-            $this->redirect((string)$uri);
-        }
-
         // On tente d'auto-connecter l'utilisateur.
         $this->loginWithCookie();
 
         // On récupère le controller.
         $controller = $this->route();
+
+        // On redirige en HTTPS si besoin.
+        if ($this->get('force_ssl') && !$this->isSSLConnection() && $controller->isSSLEnabled()) {
+            $uri = new Uri($this->get('uri.request'));
+            $uri->setScheme('https');
+            $this->redirect((string)$uri);
+        }
 
         // On sauvegarde le controller actif.
         $this->_activeController = strtolower($controller->getName());
