@@ -45,6 +45,11 @@ final class Web extends AbstractWebApplication {
     protected $language;
 
     /**
+     * @var Text Le gestionnaire de traduction de l'application.
+     */
+    protected $text;
+
+    /**
      * @var array Liste des messages devant être affichés à l'utilisateur.
      */
     protected $_messageQueue = array();
@@ -149,15 +154,31 @@ final class Web extends AbstractWebApplication {
 
             // On récupère l'objet Language avec le tag de langue.
             // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-            $language = Language::getInstance($this->get('language'), $this->get('debug_language', false));
-
-            // On configure Text pour utiliser notre instance de Language.
-            Text::setLanguage($language);
+            $language = Language::getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
 
             $this->language = $language;
         }
 
         return $this->language;
+    }
+
+    /**
+     * Renvoi l'objet de traduction.
+     *
+     * @return Text
+     */
+    public function getText() {
+
+        if (is_null($this->text)) {
+
+            // On instancie la classe Text.
+            $text = new Text($this->getLanguage());
+
+            $this->text = $text;
+        }
+
+        return $this->text;
+
     }
 
     /**

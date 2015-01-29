@@ -39,6 +39,11 @@ abstract class Daemon extends AbstractDaemonApplication {
     protected $language;
 
     /**
+     * @var Text Le gestionnaire de traduction de l'application.
+     */
+    protected $text;
+
+    /**
      * Constructeur
      *
      * @param Cli      $input
@@ -150,15 +155,31 @@ abstract class Daemon extends AbstractDaemonApplication {
 
             // On récupère l'objet Language avec le tag de langue.
             // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-            $language = Language::getInstance($this->get('language'), $this->get('debug_language', false));
-
-            // On configure Text pour utiliser notre instance de Language.
-            Text::setLanguage($language);
+            $language = Language::getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
 
             $this->language = $language;
         }
 
         return $this->language;
+    }
+
+    /**
+     * Renvoi l'objet de traduction.
+     *
+     * @return Text
+     */
+    public function getText() {
+
+        if (is_null($this->text)) {
+
+            // On instancie la classe Text.
+            $text = new Text($this->getLanguage());
+
+            $this->text = $text;
+        }
+
+        return $this->text;
+
     }
 
     /**
@@ -170,6 +191,9 @@ abstract class Daemon extends AbstractDaemonApplication {
      */
     protected function changeIdentity() {
 
+        // On récupère le traducteur.
+        $text = $this->getText();
+
         // Get the group and user ids to set for the daemon.
         $uid = (int)$this->config->get('application_uid', 0);
         $gid = (int)$this->config->get('application_gid', 0);
@@ -180,7 +204,7 @@ abstract class Daemon extends AbstractDaemonApplication {
         // Change the user id for the process id file if necessary.
         if ($uid && (fileowner($file) != $uid) && (!@ chown($file, $uid))) {
             $this->getLogger()
-                 ->error(Text::_('APP_DAEMON_ERROR_ID_FILE_USER_OWNERSHIP'));
+                 ->error($text->translate('APP_DAEMON_ERROR_ID_FILE_USER_OWNERSHIP'));
 
             return false;
         }
@@ -188,7 +212,7 @@ abstract class Daemon extends AbstractDaemonApplication {
         // Change the group id for the process id file if necessary.
         if ($gid && (filegroup($file) != $gid) && (!@ chgrp($file, $gid))) {
             $this->getLogger()
-                 ->error(Text::_('APP_DAEMON_ERROR_ID_FILE_GROUP_OWNERSHIP'));
+                 ->error($text->translate('APP_DAEMON_ERROR_ID_FILE_GROUP_OWNERSHIP'));
 
             return false;
         }
@@ -201,7 +225,7 @@ abstract class Daemon extends AbstractDaemonApplication {
         // Change the group id for the process necessary.
         if ($gid && (posix_getgid() != $gid) && (!@ posix_setgid($gid))) {
             $this->getLogger()
-                 ->error(Text::_('APP_DAEMON_ERROR_ID_PROCESS_GROUP_OWNERSHIP'));
+                 ->error($text->translate('APP_DAEMON_ERROR_ID_PROCESS_GROUP_OWNERSHIP'));
 
             return false;
         }
@@ -209,7 +233,7 @@ abstract class Daemon extends AbstractDaemonApplication {
         // Change the user id for the process necessary.
         if ($uid && (posix_getuid() != $uid) && (!@ posix_setuid($uid))) {
             $this->getLogger()
-                 ->error(Text::_('APP_DAEMON_ERROR_ID_PROCESS_USER_OWNERSHIP'));
+                 ->error($text->translate('APP_DAEMON_ERROR_ID_PROCESS_USER_OWNERSHIP'));
 
             return false;
         }
@@ -219,7 +243,7 @@ abstract class Daemon extends AbstractDaemonApplication {
         $group = posix_getgrgid($gid);
 
         $this->getLogger()
-             ->info(Text::sprintf('APP_DAEMON_ID_SUCCESS', $user['name'], $group['name']));
+             ->info($text->sprintf('APP_DAEMON_ID_SUCCESS', $user['name'], $group['name']));
 
         return true;
     }
