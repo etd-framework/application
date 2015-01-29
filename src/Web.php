@@ -211,7 +211,8 @@ final class Web extends AbstractWebApplication {
                      ->isNew()
             ) {
                 // On redirige vers la page de login.
-                $this->redirect('login', Text::_('APP_ERROR_EXPIRED_SESSION'), 'warning');
+                $this->redirect('login', $this->getText()
+                                              ->translate('APP_ERROR_EXPIRED_SESSION'), 'warning');
             } else {
                 return false;
             }
@@ -532,7 +533,8 @@ final class Web extends AbstractWebApplication {
             if (!$cookieValue) {
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($this->getText()
+                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -547,7 +549,8 @@ final class Web extends AbstractWebApplication {
                 $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie_path', '/'), $this->get('cookie_domain'));
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($this->getText()
+                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -585,7 +588,8 @@ final class Web extends AbstractWebApplication {
                 $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie_path', '/'), $this->get('cookie_domain'));
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($this->getText()
+                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -612,7 +616,8 @@ final class Web extends AbstractWebApplication {
                     //@TODO: logguer l'attaque et envoyer un mail à l'admin.
 
                     if (!isset($options['silent']) || !$options['silent']) {
-                        $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                        $this->enqueueMessage($this->getText()
+                                                   ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                     }
 
                     return false;
@@ -659,7 +664,8 @@ final class Web extends AbstractWebApplication {
             }
 
             if (!isset($options['silent']) || !$options['silent']) {
-                $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_NO_USER"), "danger");
+                $this->enqueueMessage($this->getText()
+                                           ->translate("APP_ERROR_LOGIN_NO_USER"), "danger");
             }
 
             return false;
@@ -682,7 +688,8 @@ final class Web extends AbstractWebApplication {
                 if ($res->block == "1") {
 
                     if (!isset($options['silent']) || !$options['silent']) {
-                        $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
+                        $this->enqueueMessage($this->getText()
+                                                   ->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
                     }
 
                     return false;
@@ -723,7 +730,8 @@ final class Web extends AbstractWebApplication {
             }
 
             if (isset($options['silent']) && !$options['silent']) {
-                $this->enqueueMessage(Text::_("APP_ERROR_LOGIN_INVALID_USERNAME_OR_PASSWORD"), "danger");
+                $this->enqueueMessage($this->getText()
+                                           ->translate("APP_ERROR_LOGIN_INVALID_USERNAME_OR_PASSWORD"), "danger");
             }
 
             return false;
@@ -1045,7 +1053,8 @@ final class Web extends AbstractWebApplication {
             $data = json_encode($result);
 
         } else {
-            $this->raiseError(Text::_('APP_ERROR_INVALID_RESULT'));
+            $this->raiseError($this->getText()
+                                   ->translate('APP_ERROR_INVALID_RESULT'));
         }
 
         // On affecte le résultat au corps de la réponse.
