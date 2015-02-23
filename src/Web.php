@@ -9,6 +9,7 @@
 
 namespace EtdSolutions\Application;
 
+use EtdSolutions\Acl\Acl;
 use EtdSolutions\Controller\ErrorController;
 use EtdSolutions\Document\Document;
 use EtdSolutions\User\User;
@@ -48,6 +49,11 @@ final class Web extends AbstractWebApplication {
      * @var Text Le gestionnaire de traduction de l'application.
      */
     protected $text;
+
+    /**
+     * @var Acl Le gestionnaire des droits d'accès.
+     */
+    protected $acl;
 
     /**
      * @var array Liste des messages devant être affichés à l'utilisateur.
@@ -160,6 +166,23 @@ final class Web extends AbstractWebApplication {
         }
 
         return $this->language;
+    }
+
+    /**
+     * Renvoi l'objet global de gestion ACL.
+     *
+     * @return Acl
+     */
+    public function getACL() {
+
+        if (is_null($this->acl)) {
+
+            $this->acl = Acl::getInstance($this->getDb(), $this->getText());
+
+        }
+
+        return $this->acl;
+
     }
 
     /**
@@ -917,6 +940,9 @@ final class Web extends AbstractWebApplication {
 
         // On initialise la langue.
         $this->getLanguage();
+
+        // On initialise le gestionnaire ACL
+        $this->getACL();
 
         // On définit le fuseau horaire.
         @date_default_timezone_set($this->get('timezone', 'Europe/Paris'));
