@@ -158,6 +158,9 @@ final class Web extends AbstractWebApplication {
 
         if (is_null($this->language)) {
 
+            // On instancie la langue par défaut.
+            Language::getInstance(null, JPATH_ROOT);
+
             // On récupère l'objet Language avec le tag de langue.
             // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
             $language = Language::getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
