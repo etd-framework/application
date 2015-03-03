@@ -15,7 +15,7 @@
   ],
   "require": {
     "php": ">=5.4",
-    "joomla/application": "~1.0",
+    "joomla/application": "~2.0@dev",
     "joomla/crypt": "~1.0",
     "joomla/database": "~1.0",
     "joomla/filter": "~1.0",
