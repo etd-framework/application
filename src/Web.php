@@ -21,6 +21,7 @@ use Joomla\Database\DatabaseDriver;
 use Joomla\Filter\InputFilter;
 use Joomla\Input\Input;
 use Joomla\Language\Language;
+use Joomla\Language\LanguageFactory;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
 use Joomla\Router\Router;
@@ -158,12 +159,14 @@ final class Web extends AbstractWebApplication {
 
         if (is_null($this->language)) {
 
+            $factory = new LanguageFactory;
+
             // On instancie la langue par défaut.
-            Language::getInstance(null, JPATH_ROOT);
+            $factory->getInstance(null, JPATH_ROOT);
 
             // On récupère l'objet Language avec le tag de langue.
             // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-            $language = Language::getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
+            $language = $factory->getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
 
             $this->language = $language;
         }
@@ -197,10 +200,10 @@ final class Web extends AbstractWebApplication {
 
         if (is_null($this->text)) {
 
-            // On instancie la classe Text.
-            $text = new Text($this->getLanguage());
+            $factory = new LanguageFactory;
 
-            $this->text = $text;
+            // On instancie la classe Text.
+            $this->text = $factory->getText($this->getLanguage());
         }
 
         return $this->text;
