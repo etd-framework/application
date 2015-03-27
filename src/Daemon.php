@@ -14,6 +14,7 @@ use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseFactory;
 use Joomla\Input\Cli;
 use Joomla\Language\Language;
+use Joomla\Language\LanguageFactory;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
 use Monolog\Handler\StreamHandler;
