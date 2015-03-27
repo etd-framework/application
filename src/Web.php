@@ -162,11 +162,11 @@ final class Web extends AbstractWebApplication {
             $factory = new LanguageFactory;
 
             // On instancie la langue par défaut.
-            $factory->getInstance(null, JPATH_ROOT);
+            $factory->getLanguage(null, JPATH_ROOT);
 
             // On récupère l'objet Language avec le tag de langue.
             // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-            $language = $factory->getInstance($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
+            $language = $factory->getLanguage($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
 
             $this->language = $language;
         }
