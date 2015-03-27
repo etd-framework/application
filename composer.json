@@ -15,7 +15,7 @@
   ],
   "require": {
     "php": ">=5.4",
-    "joomla/application": "~2.0.*@dev",
+    "joomla/application": "2.0.*@dev",
     "joomla/session": "~1.1",
     "joomla/uri": "~1.1",
     "joomla/crypt": "~1.0",
