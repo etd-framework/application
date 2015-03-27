@@ -14,7 +14,7 @@ use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseFactory;
 use Joomla\Input\Cli;
 use Joomla\Language\Language;
-use Joomla\Language\LanguageFactory;
+use EtdSolutions\Language\LanguageFactory;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
 use Monolog\Handler\StreamHandler;
@@ -157,11 +157,13 @@ abstract class Daemon extends AbstractDaemonApplication {
             $factory = new LanguageFactory;
 
             // On instancie la langue par défaut.
-            $factory->getLanguage(null, JPATH_ROOT);
+            $language = $factory->getLanguage($factory->getDefaultLanguage(), JPATH_ROOT, $this->get('debug_language', false));
 
-            // On récupère l'objet Language avec le tag de langue.
-            // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-            $language = $factory->getLanguage($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
+            if ($this->get('language') != $factory->getDefaultLanguage()) {
+                // On récupère l'objet Language avec le tag de langue.
+                // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
+                $language = $factory->getLanguage($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
+            }
 
             $this->language = $language;
         }
