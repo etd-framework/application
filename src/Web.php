@@ -14,7 +14,6 @@ use EtdSolutions\Language\LanguageFactory;
 use EtdSolutions\Model\Model;
 use EtdSolutions\User\User;
 
-use EtdSolutions\View\HtmlView;
 use Joomla\Application\AbstractWebApplication;
 use Joomla\Crypt\Password\Simple;
 use Joomla\DI\ContainerAwareInterface;

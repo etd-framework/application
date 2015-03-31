@@ -22,6 +22,8 @@
     "joomla/database": "~1.0",
     "joomla/filter": "~1.0",
     "joomla/router": "~1.0",
+    "joomla/registry": "2.0.*@dev",
+    "joomla/di": "2.0.*@dev",
     "etdsolutions/language": "@dev",
     "etdsolutions/controller": "@dev",
     "etdsolutions/document": "@dev",
