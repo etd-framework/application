@@ -20,8 +20,6 @@ use Joomla\Registry\Registry;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-defined('_JEXEC') or die;
-
 abstract class Daemon extends AbstractDaemonApplication {
 
     /**

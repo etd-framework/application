@@ -9,32 +9,29 @@
 
 namespace EtdSolutions\Application;
 
-use EtdSolutions\Acl\Acl;
-use EtdSolutions\Controller\ErrorController;
-use EtdSolutions\Document\Document;
+use EtdSolutions\Controller\Controller;
 use EtdSolutions\Language\LanguageFactory;
+use EtdSolutions\Model\Model;
 use EtdSolutions\User\User;
+
+use EtdSolutions\View\HtmlView;
 use Joomla\Application\AbstractWebApplication;
-use Joomla\Application\Web\WebClient;
 use Joomla\Crypt\Password\Simple;
-use Joomla\Database\DatabaseFactory;
-use Joomla\Database\DatabaseDriver;
+use Joomla\DI\ContainerAwareInterface;
+use Joomla\DI\ContainerAwareTrait;
 use Joomla\Filter\InputFilter;
-use Joomla\Input\Input;
-use Joomla\Language\Language;
-use Joomla\Language\Text;
+use Joomla\Language\LanguageHelper;
 use Joomla\Registry\Registry;
 use Joomla\Router\Router;
-use Joomla\Session\Session;
-use Joomla\String\String;
 use Joomla\Uri\Uri;
+
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-defined('_JEXEC') or die;
+class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
-final class Web extends AbstractWebApplication {
+    use ContainerAwareTrait;
 
     /**
      * @var Router  Le router de l'application.
@@ -42,29 +39,9 @@ final class Web extends AbstractWebApplication {
     public $router;
 
     /**
-     * @var Language La langue de l'application.
-     */
-    protected $language;
-
-    /**
-     * @var Text Le gestionnaire de traduction de l'application.
-     */
-    protected $text;
-
-    /**
-     * @var Acl Le gestionnaire des droits d'accès.
-     */
-    protected $acl;
-
-    /**
      * @var array Liste des messages devant être affichés à l'utilisateur.
      */
     protected $_messageQueue = array();
-
-    /**
-     * @var DatabaseDriver Le gestionnaire de la base de données.
-     */
-    protected $db;
 
     /**
      * @var array Dernière erreur.
@@ -77,182 +54,6 @@ final class Web extends AbstractWebApplication {
     protected $_activeController = '';
 
     /**
-     * @var  Web  L'instance de l'application.
-     */
-    private static $instance;
-
-    public function __construct(Input $input = null, Registry $config = null, WebClient $client = null) {
-
-        // On charge la configuration.
-        $config = new Registry(new \JConfig());
-
-        parent::__construct($input, $config, $client);
-
-    }
-
-    /**
-     * Retourne l'input
-     *
-     * @return \Joomla\Input\Input
-     */
-    public function getInput() {
-
-        return $this->input;
-    }
-
-    /**
-     * Retourne une référence à l'objet global Web, en le créant seulement si besoin.
-     *
-     * @return  Web
-     */
-    public static function getInstance() {
-
-        if (empty(self::$instance)) {
-            self::$instance = new Web;
-        }
-
-        return self::$instance;
-    }
-
-    /**
-     * Renvoi le gestionnaire de base de données, en le créant s'il n'est pas initialisé.
-     *
-     * @return DatabaseDriver Le gestionnaire de base de données.
-     */
-    public function getDb() {
-
-        if (!isset($this->db)) {
-            // On initialise la base de données.
-            $dbFactory = new DatabaseFactory();
-
-            $this->db = $dbFactory->getDriver($this->get('database.driver'), array(
-                'host'     => $this->get('database.host'),
-                'user'     => $this->get('database.user'),
-                'password' => $this->get('database.password'),
-                'port'     => $this->get('database.port'),
-                'socket'   => $this->get('database.socket'),
-                'database' => $this->get('database.name'),
-                'prefix'   => $this->get('database.prefix'),
-            ));
-
-            // Logger
-            $this->db->setLogger($this->getLogger());
-
-            // Debug ?
-            if (JDEBUG) {
-                $this->db->setDebug(true);
-            }
-        }
-
-        return $this->db;
-
-    }
-
-    /**
-     * Renvoi l'objet de langue.
-     *
-     * @return  Language
-     *
-     * @note    JPATH_ROOT doit être définit.
-     */
-    public function getLanguage() {
-
-        if (is_null($this->language)) {
-
-            $factory = new LanguageFactory;
-
-            // On instancie la langue par défaut.
-            $language = $factory->getLanguage($factory->getDefaultLanguage(), JPATH_ROOT, $this->get('debug_language', false));
-
-            if ($this->get('language') != $factory->getDefaultLanguage()) {
-                // On récupère l'objet Language avec le tag de langue.
-                // On charge aussi le fichier de langue /xx-XX/xx-XX.ini et les fonctions de localisation /xx-XX/xx-XX.localise.php si dispo.
-                $language = $factory->getLanguage($this->get('language'), JPATH_ROOT, $this->get('debug_language', false));
-            }
-
-            $this->language = $language;
-        }
-
-        return $this->language;
-    }
-
-    /**
-     * Renvoi l'objet global de gestion ACL.
-     *
-     * @return Acl
-     */
-    public function getACL() {
-
-        if (is_null($this->acl)) {
-
-            $this->acl = Acl::getInstance($this->getDb(), $this->getText());
-
-        }
-
-        return $this->acl;
-
-    }
-
-    /**
-     * Renvoi l'objet de traduction.
-     *
-     * @return Text
-     */
-    public function getText() {
-
-        if (is_null($this->text)) {
-
-            $factory = new LanguageFactory;
-
-            // On instancie la classe Text.
-            $this->text = $factory->getText($this->getLanguage());
-        }
-
-        return $this->text;
-
-    }
-
-    /**
-     * Renvoi le document.
-     *
-     * @return Document
-     *
-     * @note Juste un proxy vers Document::getInstance
-     */
-    public function getDocument() {
-
-        return Document::getInstance();
-    }
-
-    /**
-     * Contrôle un jeton de formulaire dans la requête.
-     *
-     * A utiliser avec getFormToken.
-     *
-     * @param   string $method La méthode de la requête dans la laquelle on doit trouver le jeton.
-     *
-     * @return  boolean  True si trouvé et valide, false sinon.
-     */
-    public function checkToken($method = 'request') {
-
-        $token = $this->getFormToken();
-
-        if (!$this->input->$method->get($token, '', 'alnum')) {
-            if ($this->getSession()
-                     ->isNew()
-            ) {
-                // On redirige vers la page de login.
-                $this->redirect('login', $this->getText()
-                                              ->translate('APP_ERROR_EXPIRED_SESSION'), 'warning');
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
-
-    /**
      * Redirige le navigateur vers une nouvelle adresse.
      *
      * @param string $url     La nouvelle URL
@@ -261,45 +62,6 @@ final class Web extends AbstractWebApplication {
      * @param bool   $moved   Redirection 301 pour indiquer une page qui a changé d'emplacement (SEF)
      */
     public function redirect($url, $msg = '', $msgType = 'message', $moved = false) {
-
-        // Check for relative internal links.
-        if (preg_match('#^index\.php#', $url)) {
-            $url = $this->get('uri.base.full') . $url;
-        }
-
-        // Perform a basic sanity check to make sure we don't have any CRLF garbage.
-        $url = preg_split("/[\r\n]/", $url);
-        $url = $url[0];
-
-        /*
-         * Here we need to check and see if the URL is relative or absolute.  Essentially, do we need to
-         * prepend the URL with our base URL for a proper redirect.  The rudimentary way we are looking
-         * at this is to simply check whether or not the URL string has a valid scheme or not.
-         */
-        if (!preg_match('#^[a-z]+\://#i', $url)) {
-            // Get a JURI instance for the requested URI.
-            $uri = new Uri($this->get('uri.request'));
-
-            // Get a base URL to prepend from the requested URI.
-            $prefix = $uri->toString(array(
-                'scheme',
-                'user',
-                'pass',
-                'host',
-                'port'
-            ));
-
-            // We just need the prefix since we have a path relative to the root.
-            if ($url[0] == '/') {
-                $url = $prefix . $url;
-            } else // It's relative to where we are now, so lets add that.
-            {
-                $parts = explode('/', $uri->toString(array('path')));
-                array_pop($parts);
-                $path = implode('/', $parts) . '/';
-                $url  = $prefix . $path . $url;
-            }
-        }
 
         // If the message exists, enqueue it.
         if (trim($msg)) {
@@ -312,28 +74,7 @@ final class Web extends AbstractWebApplication {
             $session->set('application.queue', $this->_messageQueue);
         }
 
-        // If the headers have already been sent we need to send the redirect statement via JavaScript.
-        if ($this->checkHeadersSent()) {
-            echo "<script>document.location.href='$url';</script>\n";
-        } else {
-            // We have to use a JavaScript redirect here because MSIE doesn't play nice with utf-8 URLs.
-            if (($this->client->engine == WebClient::TRIDENT) && !String::is_ascii($url)) {
-                $html = '<html><head>';
-                $html .= '<meta http-equiv="content-type" content="text/html; charset=' . $this->charSet . '" />';
-                $html .= '<script>document.location.href=\'' . $url . '\';</script>';
-                $html .= '</head><body></body></html>';
-
-                echo $html;
-            } else {
-                // All other cases use the more efficient HTTP header for redirection.
-                $this->header($moved ? 'HTTP/1.1 301 Moved Permanently' : 'HTTP/1.1 303 See other');
-                $this->header('Location: ' . $url);
-                $this->header('Content-Type: text/html; charset=' . $this->charSet);
-            }
-        }
-
-        // Close the application after the redirect.
-        $this->close();
+        parent::redirect($url, $moved);
     }
 
     public function enqueueMessage($msg, $type = 'info') {
@@ -384,15 +125,12 @@ final class Web extends AbstractWebApplication {
      */
     public function getMessageQueue() {
 
-        // For empty queue, if messages exists in the session, enqueue them.
-        if (!count($this->_messageQueue)) {
-            $session      = $this->getSession();
-            $sessionQueue = $session->get('application.queue');
+        $session      = $this->getSession();
+        $sessionQueue = $session->get('application.queue');
 
-            if (count($sessionQueue)) {
-                $this->_messageQueue = $sessionQueue;
-                $session->set('application.queue', null);
-            }
+        if (count($sessionQueue)) {
+            $this->_messageQueue = array_merge($sessionQueue, $this->_messageQueue);
+            $session->set('application.queue', null);
         }
 
         return $this->_messageQueue;
@@ -410,7 +148,7 @@ final class Web extends AbstractWebApplication {
         $trace = null;
         $extra = "";
 
-        if (JDEBUG) {
+        if ($this->get('debug', 0)) {
             if (isset($exception)) {
                 $trace = $exception->getTrace();
                 $extra = str_replace(JPATH_ROOT, "", $exception->getFile()) . ":" . $exception->getLine();
@@ -470,11 +208,27 @@ final class Web extends AbstractWebApplication {
                 $status = '200 OK';
                 break;
         }
+
+        // On définit les entêtes HTTP.
         $this->setHeader('status', $status);
+
+        // On sauve l'erreur dans l'appli.
         $this->setError($message, $code, $exception);
-        $controller = new ErrorController();
-        $this->input->set('layout', 'default');
-        $this->setBody($controller->execute());
+        $this->_activeController = 'error';
+
+        // On a besoin du controller par défaut pour récupérer le renderer.
+        $controller = (new Controller($this->input, $this))->setContainer($this->getContainer());
+
+        // On construit un objet View par défaut et on effectue le rendu avec le layout "error".
+        $controller->initializeRenderer();
+        $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
+
+        $this->setBody($view->setLayout('error')->setData([
+            'message'   => $message,
+            'code'      => $code,
+            'exception' => $exception
+        ])->render());
+
         $this->respond();
         $this->close();
     }
@@ -554,6 +308,14 @@ final class Web extends AbstractWebApplication {
      */
     public function login($credentials, $options = array()) {
 
+        /**
+         * @var $db \Joomla\Database\DatabaseDriver
+         */
+        $db = $this->getContainer()->get('db');
+
+        $factory = new LanguageFactory;
+        $text = $factory->getText();
+
         // Si on a demandé l'authentification par cookie.
         if (isset($options['useCookie']) && $options['useCookie']) {
 
@@ -564,8 +326,7 @@ final class Web extends AbstractWebApplication {
             if (!$cookieValue) {
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage($this->getText()
-                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -580,8 +341,7 @@ final class Web extends AbstractWebApplication {
                 $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie_path', '/'), $this->get('cookie_domain'));
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage($this->getText()
-                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -592,25 +352,25 @@ final class Web extends AbstractWebApplication {
             $series = $filter->clean($cookieArray[1], 'ALNUM');
 
             // On retire les jetons expirés.
-            $query = $this->db->getQuery(true)
+            $query = $db->getQuery(true)
                               ->delete('#__user_keys')
-                              ->where($this->db->quoteName('time') . ' < ' . $this->db->quote(time()));
-            $this->db->setQuery($query)
+                              ->where($db->quoteName('time') . ' < ' . $db->quote(time()));
+            $db->setQuery($query)
                      ->execute();
 
             // On trouve un enregistrement correspondant s'il existe.
-            $query   = $this->db->getQuery(true)
-                                ->select($this->db->quoteName(array(
+            $query   = $db->getQuery(true)
+                                ->select($db->quoteName(array(
                                     'user_id',
                                     'token',
                                     'series',
                                     'time'
                                 )))
-                                ->from($this->db->quoteName('#__user_keys'))
-                                ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                                ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
-                                ->order($this->db->quoteName('time') . ' DESC');
-            $results = $this->db->setQuery($query)
+                                ->from($db->quoteName('#__user_keys'))
+                                ->where($db->quoteName('series') . ' = ' . $db->quote($series))
+                                ->where($db->quoteName('uastring') . ' = ' . $db->quote($cookieName))
+                                ->order($db->quoteName('time') . ' DESC');
+            $results = $db->setQuery($query)
                                 ->loadObjectList();
 
             if (count($results) !== 1) {
@@ -619,8 +379,7 @@ final class Web extends AbstractWebApplication {
                 $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie_path', '/'), $this->get('cookie_domain'));
 
                 if (!isset($options['silent']) || !$options['silent']) {
-                    $this->enqueueMessage($this->getText()
-                                               ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                    $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                 }
 
                 return false;
@@ -635,10 +394,10 @@ final class Web extends AbstractWebApplication {
 
                     // C'est une attaque réelle ! Soit on a réussi à créer un cookie valide ou alors on a volé le cookie et utilisé deux fois (une fois par le pirate et une fois par la victime).
                     // On supprime tous les jetons pour cet utilisateur !
-                    $query = $this->db->getQuery(true)
+                    $query = $db->getQuery(true)
                                       ->delete('#__user_keys')
-                                      ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($results[0]->user_id));
-                    $this->db->setQuery($query)
+                                      ->where($db->quoteName('user_id') . ' = ' . $db->quote($results[0]->user_id));
+                    $db->setQuery($query)
                              ->execute();
 
                     // On détruit le cookie dans le navigateur.
@@ -647,8 +406,7 @@ final class Web extends AbstractWebApplication {
                     //@TODO: logguer l'attaque et envoyer un mail à l'admin.
 
                     if (!isset($options['silent']) || !$options['silent']) {
-                        $this->enqueueMessage($this->getText()
-                                                   ->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
+                        $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_COOKIE"), "danger");
                     }
 
                     return false;
@@ -656,36 +414,36 @@ final class Web extends AbstractWebApplication {
             }
 
             // On s'assure qu'il y a bien un utilisateur avec cet identifiant et on récupère les données dans la session.
-            $query  = $this->db->getQuery(true)
-                               ->select($this->db->quoteName(array(
+            $query  = $db->getQuery(true)
+                               ->select($db->quoteName(array(
                                    'id',
                                    'username',
                                    'password'
                                )))
-                               ->from($this->db->quoteName('#__users'))
-                               ->where($this->db->quoteName('username') . ' = ' . $this->db->quote($results[0]->user_id))
-                               ->where($this->db->quoteName('requireReset') . ' = 0');
-            $result = $this->db->setQuery($query)
+                               ->from($db->quoteName('#__users'))
+                               ->where($db->quoteName('username') . ' = ' . $db->quote($results[0]->user_id))
+                               ->where($db->quoteName('requireReset') . ' = 0');
+            $result = $db->setQuery($query)
                                ->loadObject();
 
             if ($result) {
 
                 // On charge l'utilisateur.
-                $user = User::getInstance($result->id);
+                $user = $this->getContainer()->get('user')->load($result->id);
 
                 // On met à jour la session.
                 $session = $this->getSession();
-                $session->set('user', $user);
+                $session->set('user_id', $user->id);
 
                 // On met à jour les champs dans la table de session.
-                $this->db->setQuery($this->db->getQuery(true)
-                                             ->update($this->db->quoteName('#__session'))
-                                             ->set($this->db->quoteName('guest') . ' = 0')
-                                             ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
-                                             ->set($this->db->quoteName('userid') . ' = ' . (int)$user->id)
-                                             ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId())));
+                $db->setQuery($db->getQuery(true)
+                                             ->update($db->quoteName('#__session'))
+                                             ->set($db->quoteName('guest') . ' = 0')
+                                             ->set($db->quoteName('username') . ' = ' . $db->quote($user->username))
+                                             ->set($db->quoteName('userid') . ' = ' . (int)$user->id)
+                                             ->where($db->quoteName('session_id') . ' = ' . $db->quote($session->getId())));
 
-                $this->db->execute();
+                $db->execute();
 
                 // On crée un cookie d'authentification.
                 $options['user'] = $user;
@@ -695,8 +453,7 @@ final class Web extends AbstractWebApplication {
             }
 
             if (!isset($options['silent']) || !$options['silent']) {
-                $this->enqueueMessage($this->getText()
-                                           ->translate("APP_ERROR_LOGIN_NO_USER"), "danger");
+                $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_NO_USER"), "danger");
             }
 
             return false;
@@ -704,12 +461,12 @@ final class Web extends AbstractWebApplication {
         } else { // Sinon on procède à l'authentification classique.
 
             // On vérifie les données.
-            $this->db->setQuery($this->db->getQuery(true)
+            $db->setQuery($db->getQuery(true)
                                          ->select('id, password, username, block')
                                          ->from('#__users')
-                                         ->where('username = ' . $this->db->quote($credentials['username'])));
+                                         ->where('username = ' . $db->quote($credentials['username'])));
 
-            $res = $this->db->loadObject();
+            $res = $db->loadObject();
 
             // Si on a trouvé l'utilisateur.
             // C'est déjà pas mal !
@@ -719,8 +476,7 @@ final class Web extends AbstractWebApplication {
                 if ($res->block == "1") {
 
                     if (!isset($options['silent']) || !$options['silent']) {
-                        $this->enqueueMessage($this->getText()
-                                                   ->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
+                        $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
                     }
 
                     return false;
@@ -735,21 +491,21 @@ final class Web extends AbstractWebApplication {
                     // C'est bon !
 
                     // On charge l'utilisateur.
-                    $user = User::getInstance($res->id);
+                    $user = $this->getContainer()->get('user')->load($res->id);
 
                     // On met à jour la session.
                     $session = $this->getSession();
-                    $session->set('user', $user);
+                    $session->set('user_id', $user->id);
 
                     // On met à jour les champs dans la table de session.
-                    $this->db->setQuery($this->db->getQuery(true)
-                                                 ->update($this->db->quoteName('#__session'))
-                                                 ->set($this->db->quoteName('guest') . ' = 0')
-                                                 ->set($this->db->quoteName('username') . ' = ' . $this->db->quote($user->username))
-                                                 ->set($this->db->quoteName('userid') . ' = ' . (int)$user->id)
-                                                 ->where($this->db->quoteName('session_id') . ' = ' . $this->db->quote($session->getId())));
+                    $db->setQuery($db->getQuery(true)
+                                                 ->update($db->quoteName('#__session'))
+                                                 ->set($db->quoteName('guest') . ' = 0')
+                                                 ->set($db->quoteName('username') . ' = ' . $db->quote($user->username))
+                                                 ->set($db->quoteName('userid') . ' = ' . (int)$user->id)
+                                                 ->where($db->quoteName('session_id') . ' = ' . $db->quote($session->getId())));
 
-                    $this->db->execute();
+                    $db->execute();
 
                     // On crée un cookie d'authentification.
                     $options['user'] = $user;
@@ -761,13 +517,64 @@ final class Web extends AbstractWebApplication {
             }
 
             if (isset($options['silent']) && !$options['silent']) {
-                $this->enqueueMessage($this->getText()
-                                           ->translate("APP_ERROR_LOGIN_INVALID_USERNAME_OR_PASSWORD"), "danger");
+                $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_USERNAME_OR_PASSWORD"), "danger");
             }
 
             return false;
 
         }
+
+    }
+
+    /**
+     * Méthode pour déconnecter l'utilisateur.
+     *
+     * @return bool True si succès.
+     */
+    public function logout() {
+
+        $container = $this->getContainer();
+        $my        = $container->get('user')->load();
+        $session   = $container->get('session');
+        $db        = $container->get('db');
+
+        $my->setLastVisit();
+
+        // On supprime la session PHP.
+        $session->destroy();
+
+        // On force la déconnexion de tous les utilisateurs avec cet id.
+        $db->setQuery($db->getQuery(true)
+            ->delete($db->quoteName('#__session'))
+            ->where($db->quoteName('userid') . ' = ' . (int)$my->id))
+            ->execute();
+
+        // On supprime tous les cookie d'authentification de l'utilisateur.
+        $cookieName  = $this->getShortHashedUserAgent();
+        $cookieValue = $this->input->cookie->get($cookieName);
+
+        // S'il n y a de cookie à supprimer.
+        if (!$cookieValue) {
+            return true;
+        }
+
+        $cookieArray = explode('.', $cookieValue);
+
+        // On filtre la série car on l'utilise dans la requête.
+        $filter = new InputFilter;
+        $series = $filter->clean($cookieArray[1], 'ALNUM');
+
+        // On supprime l'enregistrement dans la base de données.
+        $query = $db->getQuery(true);
+        $query->delete('#__user_keys')
+            ->where($db->quoteName('series') . ' = ' . $db->quote($series));
+        $db->setQuery($query)
+            ->execute();
+
+        // On supprime le cookie.
+        $this->input->cookie->set($cookieName, false, time() - 42000, $this->get('cookie.path', '/'), $this->get('cookie.domain'));
+
+        return true;
 
     }
 
@@ -795,6 +602,11 @@ final class Web extends AbstractWebApplication {
      */
     protected function createAuthenticationCookie($options) {
 
+        /**
+         * @var $db \Joomla\Database\DatabaseDriver
+         */
+        $db = $this->getContainer()->get('db');
+
         // L'utilisateur a utilisé un cookie pour se connecter.
         if (isset($options['useCookie']) && $options['useCookie']) {
 
@@ -817,11 +629,11 @@ final class Web extends AbstractWebApplication {
 
             do {
                 $series  = User::genRandomPassword(20);
-                $query   = $this->db->getQuery(true)
-                                    ->select($this->db->quoteName('series'))
-                                    ->from($this->db->quoteName('#__user_keys'))
-                                    ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series));
-                $results = $this->db->setQuery($query)
+                $query   = $db->getQuery(true)
+                                    ->select($db->quoteName('series'))
+                                    ->from($db->quoteName('#__user_keys'))
+                                    ->where($db->quoteName('series') . ' = ' . $db->quote($series));
+                $results = $db->setQuery($query)
                                     ->loadResult();
 
                 if (is_null($results)) {
@@ -836,37 +648,37 @@ final class Web extends AbstractWebApplication {
         }
 
         // On récupère les valeurs de la configuration.
-        $lifetime = $this->get('cookie_lifetime', '60') * 24 * 60 * 60;
-        $length   = $this->get('key_length', '16');
+        $lifetime = $this->get('cookie.lifetime', '60') * 24 * 60 * 60;
+        $length   = $this->get('cookie.key_length', '16');
 
         // On génère un nouveau cookie.
         $token       = User::genRandomPassword($length);
         $cookieValue = $token . '.' . $series;
 
         // On écrase le cookie existant avec la nouvelle valeur.
-        $this->input->cookie->set($cookieName, $cookieValue, time() + $lifetime, $this->get('cookie_path', '/'), $this->get('cookie_domain'), $this->isSSLConnection());
-        $query = $this->db->getQuery(true);
+        $this->input->cookie->set($cookieName, $cookieValue, time() + $lifetime, $this->get('cookie.path', '/'), $this->get('cookie.domain'), $this->isSSLConnection());
+        $query = $db->getQuery(true);
 
         if (isset($options['remember']) && $options['remember']) {
 
             // On crée un nouvel enregistrement.
-            $query->insert($this->db->quoteName('#__user_keys'))
-                  ->set($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
-                  ->set($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                  ->set($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName))
-                  ->set($this->db->quoteName('time') . ' = ' . (time() + $lifetime));
+            $query->insert($db->quoteName('#__user_keys'))
+                  ->set($db->quoteName('user_id') . ' = ' . $db->quote($options['user']->username))
+                  ->set($db->quoteName('series') . ' = ' . $db->quote($series))
+                  ->set($db->quoteName('uastring') . ' = ' . $db->quote($cookieName))
+                  ->set($db->quoteName('time') . ' = ' . (time() + $lifetime));
         } else {
             // On met à jour l'enregistrement existant avec le nouveau jeton.
-            $query->update($this->db->quoteName('#__user_keys'))
-                  ->where($this->db->quoteName('user_id') . ' = ' . $this->db->quote($options['user']->username))
-                  ->where($this->db->quoteName('series') . ' = ' . $this->db->quote($series))
-                  ->where($this->db->quoteName('uastring') . ' = ' . $this->db->quote($cookieName));
+            $query->update($db->quoteName('#__user_keys'))
+                  ->where($db->quoteName('user_id') . ' = ' . $db->quote($options['user']->username))
+                  ->where($db->quoteName('series') . ' = ' . $db->quote($series))
+                  ->where($db->quoteName('uastring') . ' = ' . $db->quote($cookieName));
         }
 
         $simpleAuth   = new Simple();
         $hashed_token = $simpleAuth->create($token);
-        $query->set($this->db->quoteName('token') . ' = ' . $this->db->quote($hashed_token));
-        $this->db->setQuery($query)
+        $query->set($db->quoteName('token') . ' = ' . $db->quote($hashed_token));
+        $db->setQuery($query)
                  ->execute();
 
         return true;
@@ -885,27 +697,37 @@ final class Web extends AbstractWebApplication {
             $logger = new Logger($this->get('sitename'));
 
             if (is_dir(JPATH_LOGS)) {
-                $logger->pushHandler(new StreamHandler(JPATH_LOGS . "/" . $this->get('log_file'), (JDEBUG ? Logger::DEBUG : Logger::WARNING)));
+                $logger->pushHandler(new StreamHandler(JPATH_LOGS . "/" . $this->get('log_file'), ($this->get('debug') ? Logger::DEBUG : Logger::WARNING)));
             } else { // If the log path is not set, just use a null logger.
-                $logger->pushHandler(new NullHandler, (JDEBUG ? Logger::DEBUG : Logger::WARNING));
+                $logger->pushHandler(new NullHandler, ($this->get('debug') ? Logger::DEBUG : Logger::WARNING));
             }
 
             $this->setLogger($logger);
 
         }
 
-        // Options pour la session.
-        $options = array(
-            'name'          => $this->get('sitename'),
-            'expire'        => $this->get('session_expire'),
-            'force_ssl'     => $this->get('force_ssl'),
-            'cookie_domain' => $this->get('cookie_domain'),
-            'cookie_path'   => $this->get('cookie_path'),
-            'db'            => $this->getDb()
-        );
+    }
+
+    protected function loadSystemUris($requestUri = null) {
+
+        parent::loadSystemUris($requestUri);
+
+        $uri = new Uri($this->get('uri.request'));
+        $this->set('uri.current', $uri->toString(['scheme', 'user', 'pass', 'host', 'port', 'path']));
+
+    }
+
+    /**
+     * Effectue la logique de l'application.
+     */
+    protected function doExecute() {
+
+        // Config
+        $this->getContainer()->get('config')->merge($this->config);
+        $this->setConfiguration($this->getContainer()->get('config'));
 
         // On instancie la session.
-        $this->setSession(Session::getInstance('Database', $options));
+        $this->setSession($this->getContainer()->get('session'));
 
         // On initialise la session.
         $session = $this->getSession();
@@ -925,9 +747,10 @@ final class Web extends AbstractWebApplication {
         if ($user) {
 
             $language = $user->params->get('language');
+            $helper   = new LanguageHelper;
 
             // On s'assure que la langue de l'utilisateur existe.
-            if ($language && Language::exists($language)) {
+            if ($language && $helper->exists($language, JPATH_ROOT)) {
                 $this->set('language', $language);
             }
 
@@ -938,29 +761,8 @@ final class Web extends AbstractWebApplication {
 
         }
 
-        // On instancie le routeur.
-        $this->router = new Router($this->input);
-        $this->router->setControllerPrefix($this->get('controller_prefix'));
-        $this->router->setDefaultController($this->get('default_controller'));
-
-        // On définit les routes.
-        $this->router->addMaps($this->get('routes', array()));
-
-        // On initialise la langue.
-        $this->getLanguage();
-
-        // On initialise le gestionnaire ACL
-        $this->getACL();
-
         // On définit le fuseau horaire.
         @date_default_timezone_set($this->get('timezone', 'Europe/Paris'));
-
-    }
-
-    /**
-     * Effectue la logique de l'application.
-     */
-    protected function doExecute() {
 
         // On tente d'auto-connecter l'utilisateur.
         $this->loginWithCookie();
@@ -969,11 +771,11 @@ final class Web extends AbstractWebApplication {
         $controller = $this->route();
 
         // On redirige en HTTPS si besoin.
-        if ($this->get('force_ssl') && !$this->isSSLConnection() && $controller->isSSLEnabled()) {
+        /*if ($this->get('force_ssl') && !$this->isSSLConnection() && $controller->isSSLEnabled()) {
             $uri = new Uri($this->get('uri.request'));
             $uri->setScheme('https');
             $this->redirect((string)$uri);
-        }
+        }*/
 
         // On sauvegarde le controller actif.
         $this->_activeController = strtolower($controller->getName());
@@ -1000,7 +802,7 @@ final class Web extends AbstractWebApplication {
      *
      * @param  string $route La route a analyser. (Optionnel, REQUEST_URI par défaut)
      *
-     * @return \EtdSolutions\Framework\Controller\Controller Le controller
+     * @return Controller Le controller
      */
     protected function route($route = null) {
 
@@ -1009,10 +811,28 @@ final class Web extends AbstractWebApplication {
         }
 
         try {
+
+            // On instancie le routeur.
+            $router = new Router($this->input);
+            $router->setControllerPrefix($this->get('controller_prefix'));
+            $router->setDefaultController($this->get('default_controller'));
+
+            // On définit les routes.
+            $router->addMaps($this->get('routes', array()));
+
             // On détermine le controller grâce au router.
-            $controller = $this->router->getController($route);
+            $controller = $router->getController($route);
+            $controller->setApplication($this);
+
+            // Si le controller est ContainerAware, on lui injecte le container DI.
+            if ($controller instanceof ContainerAwareInterface) {
+                $controller->setContainer($this->getContainer());
+            }
+
         } catch (\Exception $e) {
+
             $this->raiseError($e->getMessage(), $e->getCode(), $e);
+
         }
 
         return $controller;
@@ -1038,7 +858,7 @@ final class Web extends AbstractWebApplication {
             // On modifie le type MIME de la réponse.
             $this->mimeType = 'text/html';
 
-            // On récupère le document.
+            /*// On récupère le document.
             $doc = $this->getDocument();
 
             // On parse le document
@@ -1051,7 +871,8 @@ final class Web extends AbstractWebApplication {
             $doc->setPositionContent('main', $result);
 
             // On effectue le rendu du document.
-            $data = $doc->render();
+            $data = $doc->render();*/
+            $data = $result;
 
         } elseif (is_object($result)) { // C'est un objet => JSON
 
@@ -1087,8 +908,8 @@ final class Web extends AbstractWebApplication {
             $data = json_encode($result);
 
         } else {
-            $this->raiseError($this->getText()
-                                   ->translate('APP_ERROR_INVALID_RESULT'));
+            $text = (new LanguageFactory())->getText();
+            $this->raiseError($text->translate('APP_ERROR_INVALID_RESULT'));
         }
 
         // On affecte le résultat au corps de la réponse.
@@ -1121,7 +942,10 @@ final class Web extends AbstractWebApplication {
      */
     protected function createDbSession() {
 
-        $db      = $this->db;
+        /**
+         * @var $db \Joomla\Database\DatabaseDriver
+         */
+        $db      = $this->getContainer()->get('db');
         $session = $this->getSession();
 
         try {
@@ -1166,8 +990,9 @@ final class Web extends AbstractWebApplication {
     protected function loginWithCookie() {
 
         // On procède à l'authentification de l'utilisateur par cookie s'il n'est pas déjà connecté.
-        $user = $this->getSession()
-                     ->get('user');
+        $user_id = $this->getSession()->get('user_id');
+        $user    = $this->getContainer()->get('user')->load($user_id);
+
         if (!$user || ($user && $user->isGuest())) {
 
             $cookieName = $this->getShortHashedUserAgent();
@@ -1176,7 +1001,7 @@ final class Web extends AbstractWebApplication {
             if ($this->input->cookie->get($cookieName)) {
 
                 // On effectue une authentification silencieuse.
-                $this->login(array('username' => ''), array('useCookie' => true));//, 'silent' => true));
+                $this->login(array('username' => ''), array('useCookie' => true, 'silent' => true));
 
             }
 
