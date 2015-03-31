@@ -857,20 +857,6 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             // On modifie le type MIME de la réponse.
             $this->mimeType = 'text/html';
 
-            /*// On récupère le document.
-            $doc = $this->getDocument();
-
-            // On parse le document
-            $doc->parse();
-
-            // Description
-            $doc->setDescription($this->get('description'));
-
-            // Contenu du controller
-            $doc->setPositionContent('main', $result);
-
-            // On effectue le rendu du document.
-            $data = $doc->render();*/
             $data = $result;
 
         } elseif (is_object($result)) { // C'est un objet => JSON

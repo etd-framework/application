@@ -26,7 +26,6 @@
     "joomla/di": "2.0.*@dev",
     "etdsolutions/language": "@dev",
     "etdsolutions/controller": "@dev",
-    "etdsolutions/document": "@dev",
     "etdsolutions/user": "@dev",
     "monolog/monolog": "1.11.*"
   },
