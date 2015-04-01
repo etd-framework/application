@@ -222,6 +222,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         // On construit un objet View par défaut et on effectue le rendu avec le layout "error".
         $controller->initializeRenderer();
         $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
+        $view->setContainer($this->getContainer());
 
         $this->setBody($view->setLayout('error')->setData([
             'message'   => $message,
