@@ -13,6 +13,7 @@ use EtdSolutions\Controller\Controller;
 use EtdSolutions\Language\LanguageFactory;
 use EtdSolutions\Model\Model;
 use EtdSolutions\User\User;
+use EtdSolutions\View\HtmlView;
 
 use Joomla\Application\AbstractWebApplication;
 use Joomla\Crypt\Password\Simple;
@@ -23,7 +24,6 @@ use Joomla\Language\LanguageHelper;
 use Joomla\Registry\Registry;
 use Joomla\Router\Router;
 use Joomla\Uri\Uri;
-use Joomla\View\BaseHtmlView;
 
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
@@ -221,7 +221,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         // On construit un objet View par défaut et on effectue le rendu avec le layout "error".
         $controller->initializeRenderer();
-        $view = new BaseHtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
+        $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
 
         $this->setBody($view->setLayout('error')->setData([
             'message'   => $message,

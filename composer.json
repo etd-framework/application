@@ -27,6 +27,7 @@
     "etdsolutions/language": "@dev",
     "etdsolutions/controller": "@dev",
     "etdsolutions/user": "@dev",
+    "etdsolutions/view": "@dev",
     "monolog/monolog": "1.11.*"
   },
   "autoload": {
