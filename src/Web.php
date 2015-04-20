@@ -861,14 +861,16 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
             $data = $result;
 
-        } elseif (is_object($result)) { // C'est un objet => JSON
+        } elseif (is_object($result) || is_array($result)) { // C'est un objet => JSON
+
+            $r = (object) $result;
 
             // On modifie le type MIME de la réponse.
             $this->mimeType = 'application/json';
 
             // Si l'on a un code de statut HTTP.
-            if (property_exists($result, 'status')) {
-                switch ($result->status) {
+            if (property_exists($r, 'status')) {
+                switch ($r->status) {
                     case 400:
                         $status = '400 Bad Request';
                         break;
@@ -889,7 +891,13 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                         break;
                 }
                 $this->setHeader('status', $status);
-                unset($result->status);
+
+                if (is_object($result)) {
+                    unset($result->status);
+                } else {
+                    unset($result['status']);
+                }
+
             }
 
             $data = json_encode($result);
