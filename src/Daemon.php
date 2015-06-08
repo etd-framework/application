@@ -9,14 +9,16 @@
 
 namespace EtdSolutions\Application;
 
+use EtdSolutions\Language\LanguageFactory;
+
 use Joomla\Application\AbstractDaemonApplication;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\DatabaseFactory;
 use Joomla\Input\Cli;
 use Joomla\Language\Language;
-use EtdSolutions\Language\LanguageFactory;
 use Joomla\Language\Text;
 use Joomla\Registry\Registry;
+
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
