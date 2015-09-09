@@ -771,6 +771,9 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         // On récupère le controller.
         $controller = $this->route();
 
+        // On contrôle si l'utilisateur doit changer son mot de passe.
+        $this->checkUserRequireReset($controller);
+
         // On redirige en HTTPS si besoin.
         /*if ($this->get('force_ssl') && !$this->isSSLConnection() && $controller->isSSLEnabled()) {
             $uri = new Uri($this->get('uri.request'));
@@ -1002,6 +1005,39 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         }
 
+    }
+
+    /**
+     * Méthode pour contrôler que l'utilisateur doit ou ne doit pas changer son mot de passe.
+     *
+     * Si l'utilisateur doit changer son mot de passe, on le redirige vers la page qui gère ça.
+     *
+     * @return  void
+     */
+    protected function checkUserRequireReset($controller) {
+
+        $user = $this->getContainer()->get('user')->load();
+
+        if ($user->requireReset) {
+
+            /*
+             * Par défaut, c'est la page d'édition du profil qui est utilisée.
+             * Cette page permet de changer plus que le mot de passe et peut ne pas être le comportement désiré.
+             * On peut surcharger la page qui gère la remise à zero en changeant la configuration.
+             */
+            $classname = $this->get('controller_prefix') . $this->get('reset_password.controller');
+
+            if ($classname !== null && !($controller instanceof $classname)) {
+
+                $text = $this->getContainer()->get('language')->getText();
+
+                // On redirige vers la page.
+                $this->enqueueMessage($text->translate('APP_GLOBAL_PASSWORD_RESET_REQUIRED'), 'notice');
+                $this->redirect("/".$this->get('reset_password.uri'));
+
+            }
+
+        }
     }
 
 }
