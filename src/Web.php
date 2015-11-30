@@ -580,6 +580,33 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
     }
 
     /**
+     * Checks for a form token in the request.
+     *
+     * Use in conjunction with getFormToken.
+     *
+     * @param   string  $method  The request method in which to look for the token key.
+     *
+     * @return  boolean  True if found and valid, false otherwise.
+     *
+     * @since   1.0
+     */
+    public function checkToken($method = 'post') {
+        $token = $this->getFormToken();
+
+        if (!$this->input->$method->get($token, '', 'alnum')) {
+            if ($this->getSession()->isNew()) {
+                // Redirect to login screen.
+                $this->redirect('/login');
+                $this->close();
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Méthode pour récupérer un hash du user agent qui n'inclut pas la version du navigateur.
      * A cause du changement régulier de version.
      *
@@ -732,16 +759,12 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         // On initialise la session.
         $session = $this->getSession();
-        $session->initialise($this->input);
         $session->start();
 
         // On initialise l'état utilisateur.
         if ($session->isNew()) {
             $session->set('state', new Registry);
         }
-
-        // On crée la session dans la base de données.
-        $this->createDbSession();
 
         // On personnalise l'environnement suivant l'utilisateur dans la session.
         $user = $session->get('user');
@@ -928,58 +951,6 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         // On oublie pas de fermer la porte en partant !
         $this->close();
-    }
-
-    /**
-     * Méthode pour contrôler la sesion de l'utilisateur.
-     *
-     * Si l'enregistrement de la session n'existe pas, on l'initialise.
-     * Si la session est nouvelle, on créer les variables de session.
-     *
-     * @return  void
-     */
-    protected function createDbSession() {
-
-        /**
-         * @var $db \Joomla\Database\DatabaseDriver
-         */
-        $db      = $this->getContainer()->get('db');
-        $session = $this->getSession();
-
-        try {
-
-            $query = $db->getQuery(true)
-                        ->select($db->quoteName('session_id'))
-                        ->from($db->quoteName('#__session'))
-                        ->where($db->quoteName('session_id') . ' = ' . $db->quote($session->getId()));
-
-            $db->setQuery($query, 0, 1);
-            $exists = $db->loadResult();
-
-            // Si la session n'existe pas, on l'initialise.
-            if (!$exists) {
-                $query->clear();
-                if ($session->isNew()) {
-                    $query->insert($db->quoteName('#__session'))
-                          ->columns($db->quoteName('session_id') . ', ' . $db->quoteName('time'))
-                          ->values($db->quote($session->getId()) . ', ' . $db->quote((int)time()));
-                    $db->setQuery($query);
-                } else {
-                    $query->insert($db->quoteName('#__session'))
-                          ->columns($db->quoteName('session_id') . ', ' . $db->quoteName('time'))
-                          ->values($db->quote($session->getId()) . ', ' . $db->quote((int)$session->get('session.timer.start')));
-                    $db->setQuery($query);
-
-                    $db->setQuery($query);
-                }
-
-                // Si l'insertion a échoué, on quitte l'application.
-                $db->execute();
-            }
-
-        } catch (\RuntimeException $e) {
-            exit($e->getMessage());
-        }
     }
 
     /**
