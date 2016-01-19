@@ -759,10 +759,11 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         // On initialise la session.
         $session = $this->getSession();
+        $this->sessionCleanUp();
         $session->start();
 
         // On initialise l'état utilisateur.
-        if ($session->isNew()) {
+        if ($session->isNew() || $session->get('state') === null) {
             $session->set('state', new Registry);
         }
 
@@ -1009,6 +1010,20 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             }
 
         }
+    }
+
+    protected function sessionCleanUp() {
+
+        $storage = $this->getContainer()->get('storage');
+        if ($storage instanceof \Joomla\Session\StorageInterface) {
+            $handler = $this->getContainer()->get('storage')->getHandler();
+            $handler->gc($this->get('session_expire') * 60);
+            $handler->close();
+            $handler->open(null,null);
+        }
+
+        return $this;
+
     }
 
 }
