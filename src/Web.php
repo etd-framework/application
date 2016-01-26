@@ -762,10 +762,19 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $this->sessionCleanUp();
         $session->start();
 
+        // Si c'est une requête pour garder en vie la session, on peut quitter ici.
+        if ($this->input->get('stayAlive', false, 'bool') === true) {
+            echo "1";
+            $this->close();
+        }
+
         // On initialise l'état utilisateur.
         if ($session->isNew() || $session->get('state') === null) {
             $session->set('state', new Registry);
         }
+
+        // On tente d'auto-connecter l'utilisateur.
+        $this->loginWithCookie();
 
         // On personnalise l'environnement suivant l'utilisateur dans la session.
         $user = $session->get('user');
@@ -788,9 +797,6 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         // On définit le fuseau horaire.
         @date_default_timezone_set($this->get('timezone', 'Europe/Paris'));
-
-        // On tente d'auto-connecter l'utilisateur.
-        $this->loginWithCookie();
 
         // On récupère le controller.
         $controller = $this->route();
