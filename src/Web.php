@@ -754,12 +754,14 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $this->getContainer()->get('config')->merge($this->config);
         $this->setConfiguration($this->getContainer()->get('config'));
 
-        // On instancie la session.
-        $this->setSession($this->getContainer()->get('session'));
+        // On récupère la session.
+        $session = $this->getContainer()->get('session');
+        $this->setSession($session);
 
-        // On initialise la session.
-        $session = $this->getSession();
+        // On nettoie les veilles sessions
         $this->sessionCleanUp();
+
+        // On démarre la session.
         $session->start();
 
         // Si c'est une requête pour garder en vie la session, on peut quitter ici.
@@ -1023,7 +1025,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $storage = $this->getContainer()->get('storage');
         if ($storage instanceof \Joomla\Session\StorageInterface) {
             $handler = $this->getContainer()->get('storage')->getHandler();
-            $handler->gc($this->get('session_expire') * 60);
+            $handler->gc($this->get('session_expire') * 60 * 2);
             $handler->close();
             $handler->open(null,null);
         }
