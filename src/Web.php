@@ -435,6 +435,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                 // On met à jour la session.
                 $session = $this->getSession();
                 $session->set('user_id', $user->id);
+                $session->set('from_cookie', true);
 
                 // On met à jour les champs dans la table de session.
                 $db->setQuery($db->getQuery(true)
@@ -497,6 +498,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                     // On met à jour la session.
                     $session = $this->getSession();
                     $session->set('user_id', $user->id);
+                    $session->set('from_cookie', false);
 
                     // On met à jour les champs dans la table de session.
                     $db->setQuery($db->getQuery(true)
@@ -967,11 +969,15 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
      */
     protected function loginWithCookie() {
 
-        // On procède à l'authentification de l'utilisateur par cookie s'il n'est pas déjà connecté.
-        $user_id = $this->getSession()->get('user_id');
-        $user    = $this->getContainer()->get('user')->load($user_id);
+        $session_id = $this->getSession()->getId();
+        $container  = $this->getContainer();
+        $db         = $container->get('db');
 
-        if (!$user || ($user && $user->isGuest())) {
+        // On récupère l'état associé à la session.
+        $isGuest = $db->setQuery("SELECT guest FROM #__session WHERE session_id = " . $db->quote($session_id))->loadResult();
+
+        // On connecte l'utilisateur par cookie, seulement s'il invité.
+        if (!isset($isGuest) || $isGuest == "1") {
 
             $cookieName = $this->getShortHashedUserAgent();
 
