@@ -971,7 +971,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $user_id = $this->getSession()->get('user_id');
         $user    = $this->getContainer()->get('user')->load($user_id);
 
-        if (!$user || ($user && $user->isGuest())) {
+        if (!isset($user_id) || !$user || ($user && $user->isGuest())) {
 
             $cookieName = $this->getShortHashedUserAgent();
 
