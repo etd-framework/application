@@ -1031,7 +1031,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $storage = $this->getContainer()->get('storage');
         if ($storage instanceof \Joomla\Session\StorageInterface) {
             $handler = $this->getContainer()->get('storage')->getHandler();
-            $handler->gc($this->get('session_expire') * 60 * 2);
+            $handler->gc($this->get('session_expire') * 2);
             $handler->close();
             $handler->open(null,null);
         }
