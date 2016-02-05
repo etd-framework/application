@@ -9,6 +9,7 @@
 
 namespace EtdSolutions\Application;
 
+use EtdSolutions\Acl\Acl;
 use EtdSolutions\Controller\Controller;
 use EtdSolutions\Language\LanguageFactory;
 use EtdSolutions\Model\Model;
@@ -432,6 +433,15 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                 // On charge l'utilisateur.
                 $user = $this->getContainer()->get('user')->load($result->id);
 
+                // On effectue les dernières vérifications.
+                if (!$this->authoriseLogin($user)) {
+                    if (!isset($options['silent']) || !$options['silent']) {
+                        $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
+                    }
+
+                    return false;
+                }
+
                 // On met à jour la session.
                 $session = $this->getSession();
                 $session->set('user_id', $user->id);
@@ -490,10 +500,19 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                 // On contrôle le mot de passe avec le hash dans la base de données.
                 if ($simpleAuth->verify($credentials['password'], $res->password)) {
 
-                    // C'est bon !
+                    // C'est presque bon !
 
                     // On charge l'utilisateur.
                     $user = $this->getContainer()->get('user')->load($res->id);
+
+                    // On effectue les dernières vérifications.
+                    if (!$this->authoriseLogin($user)) {
+                        if (!isset($options['silent']) || !$options['silent']) {
+                            $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
+                        }
+
+                        return false;
+                    }
 
                     // On met à jour la session.
                     $session = $this->getSession();
@@ -526,6 +545,22 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             return false;
 
         }
+
+    }
+
+    /**
+     * Méthode pour autoriser la connexion de l'utilisateur en
+     * dernier lieu (après vérification du mot de passe).
+     *
+     * Par défaut c'est ok. A implémenter dans les applis.
+     *
+     * @param User $user
+     *
+     * @return bool
+     */
+    protected function authoriseLogin($user) {
+
+        return true;
 
     }
 
