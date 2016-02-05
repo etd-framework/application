@@ -442,6 +442,9 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                     return false;
                 }
 
+                // On met à jour la dernière visite.
+                $user->setLastVisit();
+
                 // On met à jour la session.
                 $session = $this->getSession();
                 $session->set('user_id', $user->id);
@@ -513,6 +516,9 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
                         return false;
                     }
+
+                    // On met à jour la dernière visite.
+                    $user->setLastVisit();
 
                     // On met à jour la session.
                     $session = $this->getSession();
