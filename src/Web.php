@@ -318,8 +318,58 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $factory = new LanguageFactory;
         $text = $factory->getText();
 
-        // Si on a demandé l'authentification par cookie.
-        if (isset($options['useCookie']) && $options['useCookie']) {
+        if (isset($options['silentReset']) && $options['silentReset']) { // Si on a demandé un reset du mot de passe.
+
+            // On s'assure qu'il y a bien un utilisateur avec ce jeton et on récupère les données dans la session.
+            $query  = $db->getQuery(true)
+                         ->select($db->quoteName(array(
+                             'id',
+                             'username',
+                             'password'
+                         )))
+                         ->from($db->quoteName('#__users'))
+                         ->where($db->quoteName('activation') . ' = ' . $db->quote($credentials['activation']))
+                         ->where($db->quoteName('requireReset') . ' = 1');
+
+            $result = $db->setQuery($query)
+                         ->loadObject();
+
+            if ($result) {
+
+                // On charge l'utilisateur.
+                $user = $this->getContainer()->get('user')->load($result->id);
+
+                // On effectue les dernières vérifications.
+                if (!$this->authoriseLogin($user)) {
+                    if (!isset($options['silent']) || !$options['silent']) {
+                        $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_BLOCKED_USER"), "danger");
+                    }
+
+                    return false;
+                }
+
+                // On met à jour la dernière visite.
+                $user->setLastVisit();
+
+                // On met à jour la session.
+                $session = $this->getSession();
+                $session->set('user_id', $user->id);
+                $session->set('from_reset', true);
+
+                // On met à jour les champs dans la table de session.
+                $db->setQuery($db->getQuery(true)
+                                 ->update($db->quoteName('#__session'))
+                                 ->set($db->quoteName('guest') . ' = 0')
+                                 ->set($db->quoteName('username') . ' = ' . $db->quote($user->username))
+                                 ->set($db->quoteName('userid') . ' = ' . (int)$user->id)
+                                 ->where($db->quoteName('session_id') . ' = ' . $db->quote($session->getId())));
+
+                $db->execute();
+
+                return true;
+            }
+
+        } elseif (isset($options['useCookie']) && $options['useCookie']) { // Si on a demandé l'authentification par cookie.
 
             // On récupère le cookie.
             $cookieName  = $this->getShortHashedUserAgent();
