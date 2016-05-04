@@ -946,7 +946,12 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             $router->setDefaultController($this->get('default_controller'));
 
             // On définit les routes.
-            $router->addMaps($this->get('routes', array()));
+            $compiled_routes = $this->get('compiled_routes');
+            if (isset($compiled_routes)) {
+                $router->setMaps($this->get('compiled_routes', array()));
+            } else {
+                $router->addMaps($this->get('routes', array()));
+            }
 
             // On détermine le controller grâce au router.
             $controller = $router->getController($route);
