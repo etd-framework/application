@@ -9,12 +9,12 @@
 
 namespace EtdSolutions\Application;
 
-use EtdSolutions\Acl\Acl;
 use EtdSolutions\Controller\Controller;
 use EtdSolutions\Language\LanguageFactory;
 use EtdSolutions\Model\Model;
 use EtdSolutions\User\User;
 use EtdSolutions\View\HtmlView;
+use EtdSolutions\Router\Router;
 
 use Joomla\Application\AbstractWebApplication;
 use Joomla\Crypt\Password\Simple;
@@ -23,7 +23,6 @@ use Joomla\DI\ContainerAwareTrait;
 use Joomla\Filter\InputFilter;
 use Joomla\Language\LanguageHelper;
 use Joomla\Registry\Registry;
-use Joomla\Router\Router;
 use Joomla\Uri\Uri;
 
 use Monolog\Handler\NullHandler;
