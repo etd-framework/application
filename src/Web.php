@@ -54,6 +54,11 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
     protected $_activeController = '';
 
     /**
+     * @var string Le layout pour afficher les erreurs.
+     */
+    protected $errorLayout = 'error';
+
+    /**
      * Redirige le navigateur vers une nouvelle adresse.
      *
      * @param string $url     La nouvelle URL
@@ -224,7 +229,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
         $view->setContainer($this->getContainer());
 
-        $this->setBody($view->setLayout('error')->setData([
+        $this->setBody($view->setLayout($this->errorLayout)->setData([
             'message'   => $message,
             'code'      => $code,
             'exception' => $exception
