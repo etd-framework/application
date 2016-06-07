@@ -221,22 +221,42 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $this->setError($message, $code, $exception);
         $this->_activeController = 'error';
 
-        // On a besoin du controller par défaut pour récupérer le renderer.
-        $controller = (new Controller($this->input, $this))->setContainer($this->getContainer());
+        // On récupère la tâche en cours
+        $task = $this->input->get('task', '', 'cmd');
 
-        // On construit un objet View par défaut et on effectue le rendu avec le layout "error".
-        $controller->initializeRenderer();
-        $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
-        $view->setContainer($this->getContainer());
+        // C'est de l'ajax ?
+        if (stripos($task, 'ajax') !== false) {
 
-        $this->setBody($view->setLayout($this->errorLayout)->setData([
-            'message'   => $message,
-            'code'      => $code,
-            'exception' => $exception
-        ])->render());
+            // On modifie le type MIME de la réponse.
+            $this->mimeType = 'application/json';
 
+            $data = json_encode([
+                'error'     => true,
+                'message'   => $message,
+                'code'      => $code,
+                'exception' => $exception
+            ]);
+
+        } else {
+
+            // On a besoin du controller par défaut pour récupérer le renderer.
+            $controller = (new Controller($this->input, $this))->setContainer($this->getContainer());
+
+            // On construit un objet View par défaut et on effectue le rendu avec le layout "error".
+            $controller->initializeRenderer();
+            $view = new HtmlView(new Model($this, $this->getContainer()->get('db')), $this->getContainer()->get('renderer'));
+            $view->setContainer($this->getContainer());
+
+            $data = $view->setLayout($this->errorLayout)->setData([
+                'message'   => $message,
+                'code'      => $code,
+                'exception' => $exception
+            ])->render();
+
+        }
+
+        $this->setBody($data);
         $this->respond();
-        $this->close();
     }
 
     /**
@@ -951,7 +971,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             $router->setDefaultController($this->get('default_controller'));
 
             // On définit les routes.
-            $compiled_routes = $this->get('compiled_routes');
+            $compiled_routes = null;//$this->get('compiled_routes');
             if (isset($compiled_routes)) {
                 $router->setMaps($this->get('compiled_routes', array()));
             } else {
