@@ -16,8 +16,8 @@
   "require": {
     "php": ">=5.4",
     "monolog/monolog": "1.11.*",
-    "joomla/application": "2.0.*@dev",
-    "joomla/di": "2.0.*@dev",
+    "joomla/application": "~2.0@dev",
+    "joomla/di": "~2.0@dev",
     "etdsolutions/language": "@dev",
     "etdsolutions/router": "@dev"
   },
