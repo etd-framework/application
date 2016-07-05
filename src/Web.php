@@ -829,20 +829,6 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         return true;
     }
 
-    /**
-     * Initialise l'application.
-     */
-    protected function initialise() {
-
-        $container = $this->getContainer();
-
-        // On instancie le logger si besoin.
-        if ($container->has('logger')) {
-            $this->setLogger($container->get('logger'));
-        }
-
-    }
-
     protected function loadSystemUris($requestUri = null) {
 
         parent::loadSystemUris($requestUri);
@@ -857,12 +843,19 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
      */
     protected function doExecute() {
 
+        $container = $this->getContainer();
+
+        // On affecte le logger si besoin.
+        if ($container->has('logger')) {
+            $this->setLogger($container->get('logger'));
+        }
+
         // Config
-        $this->getContainer()->get('config')->merge($this->config);
-        $this->setConfiguration($this->getContainer()->get('config'));
+        $container->get('config')->merge($this->config);
+        $this->setConfiguration($container->get('config'));
 
         // On récupère la session.
-        $session = $this->getContainer()->get('session');
+        $session = $container->get('session');
         $this->setSession($session);
 
         // On nettoie les veilles sessions
