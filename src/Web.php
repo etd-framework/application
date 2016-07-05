@@ -831,24 +831,14 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
     /**
      * Initialise l'application.
-     *
-     * C'est ici qu'on instancie le routeur de l'application les routes correspondantes vers les controllers.
      */
     protected function initialise() {
 
+        $container = $this->getContainer();
+
         // On instancie le logger si besoin.
-        if ($this->get('log', false)) {
-
-            $logger = new Logger($this->get('sitename'));
-
-            if (is_dir(JPATH_LOGS)) {
-                $logger->pushHandler(new StreamHandler(JPATH_LOGS . "/" . $this->get('log_file'), ($this->get('debug') ? Logger::DEBUG : Logger::WARNING)));
-            } else { // If the log path is not set, just use a null logger.
-                $logger->pushHandler(new NullHandler, ($this->get('debug') ? Logger::DEBUG : Logger::WARNING));
-            }
-
-            $this->setLogger($logger);
-
+        if ($container->has('logger')) {
+            $this->setLogger($container->get('logger'));
         }
 
     }
