@@ -59,6 +59,64 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
     protected $errorLayout = 'error';
 
     /**
+     * Execute the application.
+     *
+     * @return  void
+     */
+    public function execute() {
+
+        if ($this->get('debug')) {
+            $this->set('gzip', false);
+            ob_start();
+            ob_implicit_flush(false);
+        }
+
+        $container = $this->getContainer();
+        $profiler = $container->has('profiler') ? $container->get('profiler') : false;
+
+        if ($profiler) {
+            $profiler->mark('beforeExecute');
+        }
+
+        // Perform application routines.
+        $this->doExecute();
+
+        if ($profiler) {
+            $profiler->mark('afterExecute');
+        }
+
+        // If gzip compression is enabled in configuration and the server is compliant, compress the output.
+        if ($this->get('gzip') && !ini_get('zlib.output_compression') && (ini_get('output_handler') != 'ob_gzhandler'))
+        {
+            $this->compress();
+        }
+
+        if ($profiler) {
+            $profiler->mark('beforeRespond');
+        }
+
+        // Send the application response.
+        $this->respond();
+
+        if ($profiler) {
+            $profiler->mark('afterRespond');
+            $profiler->mark('end');
+            if ($this->mimeType == 'text/html') {
+
+                $contents = ob_get_contents();
+                if ($contents) {
+                    ob_end_clean();
+                }
+
+                echo str_replace('</body>', $profiler->render() . '</body>', $contents);
+
+            } else {
+                $profiler->dump($this->get('uri.current'));
+            }
+        }
+    }
+
+    /**
      * Redirige le navigateur vers une nouvelle adresse.
      *
      * @param string $url     La nouvelle URL
@@ -918,8 +976,18 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         try {
 
+            $profiler = $this->container->has('profiler') ? $this->container->get('profiler') : false;
+
+            if ($profiler) {
+                $profiler->mark('beforeControllerExecute');
+            }
+
             // On exécute la logique du controller et on récupère le résultat.
             $result = $controller->execute();
+
+            if ($profiler) {
+                $profiler->mark('afterControllerExecute');
+            }
 
             // On effectue le rendu de la page avec le résultat.
             $this->render($result);
@@ -941,6 +1009,12 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
      * @return Controller Le controller
      */
     protected function route($route = null) {
+
+        $profiler = $this->container->has('profiler') ? $this->container->get('profiler') : false;
+
+        if ($profiler) {
+            $profiler->mark('beforeRoute');
+        }
 
         if (!isset($route)) {
             $route = $_SERVER['REQUEST_URI'];
@@ -976,6 +1050,10 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
         }
 
+        if ($profiler) {
+            $profiler->mark('afterRoute');
+        }
+
         return $controller;
 
     }
@@ -992,6 +1070,12 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
      *
      */
     protected function render($result) {
+
+        $profiler = $this->container->has('profiler') ? $this->container->get('profiler') : false;
+
+        if ($profiler) {
+            $profiler->mark('beforeRender');
+        }
 
         // C'est un string => HTML
         if (is_string($result)) {
@@ -1050,21 +1134,10 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         // On affecte le résultat au corps de la réponse.
         $this->setBody($data);
 
-    }
+        if ($profiler) {
+            $profiler->mark('afterRender');
+        }
 
-    /**
-     * Méthode pour envoyer la réponse de l'application au client.
-     * Toutes les entêtes seront envoyées avant le contenu principal
-     * des données de sortie de l'application.
-     *
-     * @return  void
-     */
-    protected function respond() {
-
-        parent::respond();
-
-        // On oublie pas de fermer la porte en partant !
-        $this->close();
     }
 
     /**
