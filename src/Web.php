@@ -65,14 +65,14 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
      */
     public function execute() {
 
-        if ($this->get('debug')) {
+        $container = $this->getContainer();
+        $profiler = $container->has('profiler') ? $container->get('profiler') : false;
+
+        if ($this->get('debug') && $profiler) {
             $this->set('gzip', false);
             ob_start();
             ob_implicit_flush(false);
         }
-
-        $container = $this->getContainer();
-        $profiler = $container->has('profiler') ? $container->get('profiler') : false;
 
         if ($profiler) {
             $profiler->mark('beforeExecute');
