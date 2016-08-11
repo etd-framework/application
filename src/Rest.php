@@ -53,7 +53,7 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
         }
 
         if ($this->get('json_options') === null) {
-            $this->set('json_options', JSON_PRETTY_PRINT  JSON_UNESCAPED_SLASHES);
+            $this->set('json_options', JSON_PRETTY_PRINT + JSON_UNESCAPED_SLASHES);
         }
 
     }
