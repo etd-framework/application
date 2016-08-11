@@ -53,7 +53,7 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
         }
 
         if ($this->get('json_options') === null) {
-            $this->set('json_options', JSON_PRETTY_PRINT + JSON_UNESCAPED_SLASHES);
+            $this->set('json_options', JSON_PRETTY_PRINT  JSON_UNESCAPED_SLASHES);
         }
 
     }
@@ -242,6 +242,9 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
                     break;
                 case 404:
                     $status = '404 Not found';
+                    break;
+                case 422:
+                    $status = '422 Unprocessable Entity';
                     break;
                 case 500:
                     $status = '500 Internal Server Error';
