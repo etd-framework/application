@@ -234,6 +234,9 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
                 case 201:
                     $status = '201 Created';
                     break;
+                case 204:
+                    $status = '204 No Content';
+                    break;
                 case 400:
                     $status = '400 Bad Request';
                     break;
