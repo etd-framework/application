@@ -231,6 +231,9 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
         // Si l'on a un code de statut HTTP.
         if (property_exists($r, 'status')) {
             switch ($r->status) {
+                case 201:
+                    $status = '201 Created';
+                    break;
                 case 400:
                     $status = '400 Bad Request';
                     break;
