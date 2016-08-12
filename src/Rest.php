@@ -174,34 +174,26 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
             $route = $_SERVER['REQUEST_URI'];
         }
 
-        try {
+        // On instancie le routeur.
+        $router = new RestRouter($this->input);
+        $router->setControllerPrefix($this->get('controller_prefix'));
+        $router->setDefaultController($this->get('default_controller'));
 
-            // On instancie le routeur.
-            $router = new RestRouter($this->input);
-            $router->setControllerPrefix($this->get('controller_prefix'));
-            $router->setDefaultController($this->get('default_controller'));
+        // On définit les routes.
+        $compiled_routes = $this->get('compiled_routes');
+        if (isset($compiled_routes)) {
+            $router->setMaps($this->get('compiled_routes', array()));
+        } else {
+            $router->addMaps($this->get('routes', array()));
+        }
 
-            // On définit les routes.
-            $compiled_routes = $this->get('compiled_routes');
-            if (isset($compiled_routes)) {
-                $router->setMaps($this->get('compiled_routes', array()));
-            } else {
-                $router->addMaps($this->get('routes', array()));
-            }
+        // On détermine le controller grâce au router.
+        $controller = $router->getController($route);
+        $controller->setApplication($this);
 
-            // On détermine le controller grâce au router.
-            $controller = $router->getController($route);
-            $controller->setApplication($this);
-
-            // Si le controller est ContainerAware, on lui injecte le container DI.
-            if ($controller instanceof ContainerAwareInterface) {
-                $controller->setContainer($this->getContainer());
-            }
-
-        } catch (\Exception $e) {
-
-            $this->raiseError($e->getMessage(), $e->getCode(), null, $e);
-
+        // Si le controller est ContainerAware, on lui injecte le container DI.
+        if ($controller instanceof ContainerAwareInterface) {
+            $controller->setContainer($this->getContainer());
         }
 
         if ($profiler) {
