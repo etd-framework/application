@@ -200,7 +200,7 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
 
         } catch (\Exception $e) {
 
-            $this->raiseError($e->getMessage(), $e->getCode(), $e);
+            $this->raiseError($e->getMessage(), $e->getCode(), null, $e);
 
         }
 
@@ -283,16 +283,19 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
     /**
      * @param string     $message
      * @param int        $code
+     * @param array      $errors
      * @param \Exception $exception
      */
-    public function raiseError($message, $code, $exception = null) {
+    public function raiseError($message, $code, $errors = null, $exception = null) {
 
         $ret = [
-            "error"   => true,
             "message" => $message,
-            "code"    => $code,
             "status"  => $code
         ];
+
+        if (isset($errors)) {
+            $ret["errors"] = $errors;
+        }
 
         if (isset($exception) && $this->getContainer()
                                       ->get('config')
