@@ -838,7 +838,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         if (!$this->input->$method->get($token, '', 'alnum')) {
             if ($this->getSession()->isNew()) {
                 // Redirect to login screen.
-                $this->redirect('/login');
+                $this->redirect('/login?token=1');
                 $this->close();
             }
 
