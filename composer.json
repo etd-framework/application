@@ -19,7 +19,9 @@
     "joomla/application": "~2.0@dev",
     "joomla/di": "~2.0@dev",
     "etdsolutions/language": "@dev",
-    "etdsolutions/router": "@dev"
+    "etdsolutions/router": "@dev",
+    "etdsolutions/view": "@dev",
+    "etdsolutions/model": "@dev"
   },
   "suggest": {
     "joomla/uri": "Pour utiliser la classe Web",
