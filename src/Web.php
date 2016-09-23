@@ -203,6 +203,13 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             $session->set('application.queue', $this->_messageQueue);
         }
 
+	    $container = $this->getContainer();
+	    $profiler = $container->has('profiler') ? $container->get('profiler') : false;
+	    if ($profiler) {
+		    $profiler->mark('redirect');
+		    $profiler->dump($this->get('uri.current'));
+	    }
+
         parent::redirect($url, $moved);
     }
 
