@@ -17,17 +17,12 @@ use EtdSolutions\View\HtmlView;
 use EtdSolutions\Router\Router;
 
 use Joomla\Application\AbstractWebApplication;
-use Joomla\Crypt\Password\Simple;
 use Joomla\DI\ContainerAwareInterface;
 use Joomla\DI\ContainerAwareTrait;
 use Joomla\Filter\InputFilter;
 use Joomla\Language\LanguageHelper;
 use Joomla\Registry\Registry;
 use Joomla\Uri\Uri;
-
-use Monolog\Handler\NullHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
 
 class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
@@ -594,11 +589,11 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             } else { // On a un utilisateur avec un cookie valide qui correspond à un enregistrement en base.
 
                 // On instancie la mécanique de vérification.
-                $simpleAuth = new Simple();
+                //$simpleAuth = new Simple();
 
                 //$token = $simpleAuth->create($cookieArray[0]);
 
-                if (!$simpleAuth->verify($cookieArray[0], $results[0]->token)) {
+                if (!password_verify($cookieArray[0], $results[0]->token)) {
 
                     // C'est une attaque réelle ! Soit on a réussi à créer un cookie valide ou alors on a volé le cookie et utilisé deux fois (une fois par le pirate et une fois par la victime).
                     // On supprime tous les jetons pour cet utilisateur !
@@ -704,10 +699,10 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                 }
 
                 // On instancie la mécanique de vérification.
-                $simpleAuth = new Simple();
+                //$simpleAuth = new Simple();
 
                 // On contrôle le mot de passe avec le hash dans la base de données.
-                if ($simpleAuth->verify($credentials['password'], $res->password)) {
+                if (password_verify($credentials['password'], $res->password)) {
 
                     // C'est presque bon !
 
@@ -845,7 +840,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         if (!$this->input->$method->get($token, '', 'alnum')) {
             if ($this->getSession()->isNew()) {
                 // Redirect to login screen.
-                $this->redirect('/login?token=1');
+                $this->redirect('/login');
                 $this->close();
             }
 
@@ -952,8 +947,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                   ->where($db->quoteName('uastring') . ' = ' . $db->quote($cookieName));
         }
 
-        $simpleAuth   = new Simple();
-        $hashed_token = $simpleAuth->create($token);
+        $hashed_token = password_hash($token, $this->get('crypt.algo', PASSWORD_BCRYPT), $this->get('crypt.options', null));
         $query->set($db->quoteName('token') . ' = ' . $db->quote($hashed_token));
         $db->setQuery($query)
                  ->execute();
