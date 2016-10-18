@@ -947,7 +947,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
                   ->where($db->quoteName('uastring') . ' = ' . $db->quote($cookieName));
         }
 
-        $hashed_token = password_hash($token, $this->get('crypt.algo', PASSWORD_BCRYPT), $this->get('crypt.options', null));
+        $hashed_token = password_hash($token, PASSWORD_BCRYPT, null);
         $query->set($db->quoteName('token') . ' = ' . $db->quote($hashed_token));
         $db->setQuery($query)
                  ->execute();
