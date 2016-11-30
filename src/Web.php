@@ -356,12 +356,25 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             // On modifie le type MIME de la réponse.
             $this->mimeType = 'application/json';
 
-            $data = json_encode([
-                'error'     => true,
-                'message'   => $message,
-                'code'      => $code,
-                'exception' => $exception
-            ]);
+            $data = [
+                'error'   => true,
+                'message' => $message,
+                'code'    => $code
+            ];
+
+            if ($this->get('debug', 0)) {
+                $trace = null;
+                $extra = "";
+                if (isset($exception)) {
+                    $trace = $exception->getTrace();
+                    $data['extra'] = str_replace(JPATH_ROOT, "", $exception->getFile()) . ":" . $exception->getLine();
+                } else {
+                    $trace = array_slice(debug_backtrace(), 2);
+                }
+                $data['trace'] = $trace;
+            }
+
+            $data = json_encode($data);
 
         } else {
 
