@@ -879,6 +879,18 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
     }
 
     /**
+     * Method to determine a hash for anti-spoofing variable names
+     *
+     * @param   boolean  $forceNew  If true, force a new token to be created
+     *
+     * @return  string  Hashed var name
+     */
+    public function getFormToken($forceNew = false) {
+	   
+        return md5($this->get('secret') . $this->getSession()->getToken($forceNew));    
+    }
+
+    /**
      * Méthode pour créer un cookie d'authentification pour l'utilisateur.
      *
      * @param array $options Un tableau d'options.
