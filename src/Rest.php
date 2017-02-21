@@ -309,5 +309,17 @@ class Rest extends AbstractWebApplication implements ContainerAwareInterface {
         exit;
 
     }
+    
+     /**
+     * Method to determine a hash for anti-spoofing variable names
+     *
+     * @param   boolean  $forceNew  If true, force a new token to be created
+     *
+     * @return  string  Hashed var name
+     */
+    public function getFormToken($forceNew = false) {
+	   
+        return md5($this->get('secret') . $this->getSession()->getToken($forceNew));    
+    }
 
 }
