@@ -259,7 +259,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $session      = $this->getSession();
         $sessionQueue = $session->get('application.queue');
 
-        if (count($sessionQueue)) {
+        if (isset($sessionQueue) && count($sessionQueue)) {
             $this->_messageQueue = array_merge($sessionQueue, $this->_messageQueue);
             $session->set('application.queue', null);
         }
