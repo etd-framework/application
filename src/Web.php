@@ -758,7 +758,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
             }
 
-            if (isset($options['silent']) && !$options['silent']) {
+            if (!isset($options['silent']) || !$options['silent']) {
                 $this->enqueueMessage($text->translate("APP_ERROR_LOGIN_INVALID_USERNAME_OR_PASSWORD"), "danger");
             }
 
