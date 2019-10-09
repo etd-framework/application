@@ -193,7 +193,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         }
 
         // Persist messages if they exist.
-        if (count($this->_messageQueue)) {
+        if (!empty($this->_messageQueue)) {
             $session = $this->getSession();
             $session->set('application.queue', $this->_messageQueue);
         }
@@ -210,11 +210,11 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
 
     public function enqueueMessage($msg, $type = 'info') {
 
-        if (!count($this->_messageQueue)) {
+        if (empty($this->_messageQueue)) {
             $session      = $this->getSession();
             $sessionQueue = $session->get('application.queue');
 
-            if (count($sessionQueue)) {
+            if (!empty($sessionQueue)) {
                 $this->_messageQueue = $sessionQueue;
                 $session->set('application.queue', null);
             }
@@ -259,7 +259,7 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
         $session      = $this->getSession();
         $sessionQueue = $session->get('application.queue');
 
-        if (isset($sessionQueue) && count($sessionQueue)) {
+        if (isset($sessionQueue) && !empty($sessionQueue)) {
             $this->_messageQueue = array_merge($sessionQueue, $this->_messageQueue);
             $session->set('application.queue', null);
         }
@@ -1188,6 +1188,9 @@ class Web extends AbstractWebApplication implements ContainerAwareInterface {
             // Si l'on a un code de statut HTTP.
             if (property_exists($r, 'status')) {
                 switch ($r->status) {
+                    case 204:
+                        $status = '204 No Content';
+                        break;
                     case 400:
                         $status = '400 Bad Request';
                         break;
